@@ -17,7 +17,7 @@ description: |-
   Google Kubernetes Engine (GKE) is a secured and managed Kubernetes service with 
   four-way auto scaling and multi-cluster support. Use this action to authenticate to
   a GKE cluster by generating an emphemeral kubeconfig that can be used with kubectl, helm etc.
-author: GoogleCloudPlatform
+author: Google LLC
 
 inputs:
   credentials:
