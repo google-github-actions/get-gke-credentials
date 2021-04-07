@@ -2480,7 +2480,10 @@ class ClusterClient {
         // This method looks for the GCLOUD_PROJECT and GOOGLE_APPLICATION_CREDENTIALS
         // environment variables.
         this.auth = new google_auth_library_1.GoogleAuth({
-            scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+            scopes: [
+                'https://www.googleapis.com/auth/cloud-platform',
+                'https://www.googleapis.com/auth/userinfo.email',
+            ],
         });
         // Set credentials, if any.
         let jsonContent;
