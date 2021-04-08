@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://www.github.com/google-github-actions/get-gke-credentials/compare/v0.2.1...v0.3.0) (2021-04-08)
+
+
+### Features
+
+* Add userinfo.email scope ([#15](https://www.github.com/google-github-actions/get-gke-credentials/issues/15)) ([#16](https://www.github.com/google-github-actions/get-gke-credentials/issues/16)) ([fb20944](https://www.github.com/google-github-actions/get-gke-credentials/commit/fb2094492a5ee4105b6fab09f5c9d5cbbb6dd162))
+
 ### [0.2.1](https://www.github.com/google-github-actions/get-gke-credentials/compare/v0.2.0...v0.2.1) (2020-11-13)
 
 
