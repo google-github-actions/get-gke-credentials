@@ -33,7 +33,7 @@
   },
   "devDependencies": {
     "@kubernetes/client-node": "^0.15.0",
-    "@types/chai": "^4.2.19",
+    "@types/chai": "^4.2.20",
     "@types/chai-as-promised": "^7.1.4",
     "@types/lodash": "^4.14.170",
     "@types/mocha": "^8.2.2",
