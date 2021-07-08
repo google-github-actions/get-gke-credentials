@@ -35,7 +35,7 @@
     "@kubernetes/client-node": "^0.15.0",
     "@types/chai": "^4.2.20",
     "@types/chai-as-promised": "^7.1.4",
-    "@types/lodash": "^4.14.170",
+    "@types/lodash": "^4.14.171",
     "@types/mocha": "^8.2.2",
     "@types/node": "^16.0.0",
     "@types/sinon": "^10.0.2",
