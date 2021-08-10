@@ -20,6 +20,8 @@ import {
   JWT,
   Compute,
   UserRefreshClient,
+  Impersonated,
+  BaseExternalAccountClient,
 } from 'google-auth-library';
 import YAML from 'yaml';
 
@@ -46,7 +48,13 @@ export class ClusterClient {
   readonly userAgent = 'github-actions-get-gke-credentials/0.1.0';
   readonly auth: GoogleAuth;
   readonly parent: string;
-  authClient: JWT | Compute | UserRefreshClient | undefined;
+  authClient:
+    | JWT
+    | Compute
+    | UserRefreshClient
+    | Impersonated
+    | BaseExternalAccountClient
+    | undefined;
 
   constructor(location: string, opts?: ClientOptions) {
     let projectId = opts?.projectId;
@@ -95,9 +103,11 @@ export class ClusterClient {
   /**
    * Retrieves the auth client for authenticating requests.
    *
-   * @returns JWT | Compute | UserRefreshClient.
+   * @returns JWT | Compute | UserRefreshClient | Impersonated | BaseExternalAccountClient.
    */
-  async getAuthClient(): Promise<JWT | Compute | UserRefreshClient> {
+  async getAuthClient(): Promise<
+    JWT | Compute | UserRefreshClient | Impersonated | BaseExternalAccountClient
+  > {
     if (!this.authClient) {
       this.authClient = await this.auth.getClient();
     }
