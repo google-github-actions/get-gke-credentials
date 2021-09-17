@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
+
 # get-gke-credentials
 
 This action configures authentication to a [GKE cluster][gke] via a `kubeconfig` file that can be used with `kubectl` or other methods of interacting with the cluster.
@@ -31,21 +32,21 @@ This action requires:
 
 ```yaml
 steps:
-- id: auth
-  uses: google-github-actions/auth@v0.4.0
-  with:
-    workload_identity_provider: 'projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
-    service_account: 'my-service-account@my-project.iam.gserviceaccount.com'
+  - id: auth
+    uses: google-github-actions/auth@v0.4.0
+    with:
+      workload_identity_provider: 'projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
+      service_account: 'my-service-account@my-project.iam.gserviceaccount.com'
 
-- id: get-credentials
-  uses: google-github-actions/get-gke-credentials@v0.3.0
-  with:
-    cluster_name: my-cluster
-    location: us-central1-a
+  - id: get-credentials
+    uses: google-github-actions/get-gke-credentials@v0.3.0
+    with:
+      cluster_name: my-cluster
+      location: us-central1-a
 
-# The KUBECONFIG env var is automatically exported and picked up by kubectl.
-- id: get-pods
-  run: kubectl get pods
+  # The KUBECONFIG env var is automatically exported and picked up by kubectl.
+  - id: get-pods
+    run: kubectl get pods
 ```
 
 ## Inputs
@@ -77,7 +78,7 @@ with **at least** the following roles:
 
 - Kubernetes Engine Cluster Viewer (`roles/container.clusterViewer`):
   - Get and list access to GKE Clusters.
-`
+    `
 
 ### Via google-github-actions/auth
 
@@ -119,8 +120,9 @@ See [usage](https://github.com/google-github-actions/auth#usage) for more detail
 
 If you are hosting your own runners, **and** those runners are on Google Cloud,
 you can leverage the Application Default Credentials of the instance. This will
-authenticate requests as the service account attached to the instance. **This
-only works using a custom runner hosted on GCP.**
+authenticate requests as the service account attached to the instance and requires
+`GCLOUD_PROJECT` environment variable to be set. **This only works using a custom
+runner hosted on GCP.**
 
 ```yaml
 - id: get-credentials

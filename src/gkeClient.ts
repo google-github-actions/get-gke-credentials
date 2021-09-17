@@ -60,8 +60,8 @@ export class ClusterClient {
     let projectId = opts?.projectId;
     if (
       !opts?.credentials &&
-      (!process.env.GCLOUD_PROJECT ||
-        !process.env.GOOGLE_APPLICATION_CREDENTIALS)
+      !process.env.GCLOUD_PROJECT &&
+      !process.env.GOOGLE_APPLICATION_CREDENTIALS
     ) {
       throw new Error(
         'No method for authentication. Set credentials in this action or export credentials from the setup-gcloud action',
