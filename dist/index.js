@@ -178,6 +178,39 @@ module.exports = DataStream;
 
 /***/ }),
 
+/***/ 34:
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+// Copyright 2018 Google LLC
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.GaxiosError = void 0;
+/* eslint-disable @typescript-eslint/no-explicit-any */
+class GaxiosError extends Error {
+    constructor(message, options, response) {
+        super(message);
+        this.response = response;
+        this.config = options;
+        this.code = response.status.toString();
+    }
+}
+exports.GaxiosError = GaxiosError;
+//# sourceMappingURL=common.js.map
+
+/***/ }),
+
 /***/ 40:
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
@@ -1372,6 +1405,10 @@ exports.formatArgs = formatArgs;
 exports.save = save;
 exports.load = load;
 exports.useColors = useColors;
+exports.destroy = util.deprecate(
+	() => {},
+	'Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.'
+);
 
 /**
  * Colors.
@@ -1601,7 +1638,9 @@ const {formatters} = module.exports;
 formatters.o = function (v) {
 	this.inspectOpts.colors = this.useColors;
 	return util.inspect(v, this.inspectOpts)
-		.replace(/\s*\n\s*/g, ' ');
+		.split('\n')
+		.map(str => str.trim())
+		.join(' ');
 };
 
 /**
@@ -1624,7 +1663,7 @@ formatters.O = function (v) {
 // We use any as a valid input type
 /* eslint-disable @typescript-eslint/no-explicit-any */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.toCommandValue = void 0;
+exports.toCommandProperties = exports.toCommandValue = void 0;
 /**
  * Sanitizes an input into a string so it can be passed into issueCommand safely
  * @param input input to sanitize into a string
@@ -1639,6 +1678,25 @@ function toCommandValue(input) {
     return JSON.stringify(input);
 }
 exports.toCommandValue = toCommandValue;
+/**
+ *
+ * @param annotationProperties
+ * @returns The command properties to send with the actual annotation command
+ * See IssueCommandProperties: https://github.com/actions/runner/blob/main/src/Runner.Worker/ActionCommandManager.cs#L646
+ */
+function toCommandProperties(annotationProperties) {
+    if (!Object.keys(annotationProperties).length) {
+        return {};
+    }
+    return {
+        title: annotationProperties.title,
+        line: annotationProperties.startLine,
+        endLine: annotationProperties.endLine,
+        col: annotationProperties.startColumn,
+        endColumn: annotationProperties.endColumn
+    };
+}
+exports.toCommandProperties = toCommandProperties;
 //# sourceMappingURL=utils.js.map
 
 /***/ }),
@@ -2019,6 +2077,123 @@ module.exports = function jwa(algorithm) {
   }
 };
 
+
+/***/ }),
+
+/***/ 117:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+/**
+ * Copyright 2021 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Impersonated = void 0;
+const oauth2client_1 = __webpack_require__(449);
+class Impersonated extends oauth2client_1.OAuth2Client {
+    /**
+     * Impersonated service account credentials.
+     *
+     * Create a new access token by impersonating another service account.
+     *
+     * Impersonated Credentials allowing credentials issued to a user or
+     * service account to impersonate another. The source project using
+     * Impersonated Credentials must enable the "IAMCredentials" API.
+     * Also, the target service account must grant the orginating principal
+     * the "Service Account Token Creator" IAM role.
+     *
+     * @param {object} options - The configuration object.
+     * @param {object} [options.sourceClient] the source credential used as to
+     * acquire the impersonated credentials.
+     * @param {string} [options.targetPrincipal] the service account to
+     * impersonate.
+     * @param {string[]} [options.delegates] the chained list of delegates
+     * required to grant the final access_token. If set, the sequence of
+     * identities must have "Service Account Token Creator" capability granted to
+     * the preceding identity. For example, if set to [serviceAccountB,
+     * serviceAccountC], the sourceCredential must have the Token Creator role on
+     * serviceAccountB. serviceAccountB must have the Token Creator on
+     * serviceAccountC. Finally, C must have Token Creator on target_principal.
+     * If left unset, sourceCredential must have that role on targetPrincipal.
+     * @param {string[]} [options.targetScopes] scopes to request during the
+     * authorization grant.
+     * @param {number} [options.lifetime] number of seconds the delegated
+     * credential should be valid for up to 3600 seconds by default, or 43,200
+     * seconds by extending the token's lifetime, see:
+     * https://cloud.google.com/iam/docs/creating-short-lived-service-account-credentials#sa-credentials-oauth
+     * @param {string} [options.endpoint] api endpoint override.
+     */
+    constructor(options = {}) {
+        var _a, _b, _c, _d, _e, _f;
+        super(options);
+        this.credentials = {
+            expiry_date: 1,
+            refresh_token: 'impersonated-placeholder',
+        };
+        this.sourceClient = (_a = options.sourceClient) !== null && _a !== void 0 ? _a : new oauth2client_1.OAuth2Client();
+        this.targetPrincipal = (_b = options.targetPrincipal) !== null && _b !== void 0 ? _b : '';
+        this.delegates = (_c = options.delegates) !== null && _c !== void 0 ? _c : [];
+        this.targetScopes = (_d = options.targetScopes) !== null && _d !== void 0 ? _d : [];
+        this.lifetime = (_e = options.lifetime) !== null && _e !== void 0 ? _e : 3600;
+        this.endpoint = (_f = options.endpoint) !== null && _f !== void 0 ? _f : 'https://iamcredentials.googleapis.com';
+    }
+    /**
+     * Refreshes the access token.
+     * @param refreshToken Unused parameter
+     */
+    async refreshToken(refreshToken) {
+        var _a, _b, _c, _d, _e, _f;
+        try {
+            await this.sourceClient.getAccessToken();
+            const name = 'projects/-/serviceAccounts/' + this.targetPrincipal;
+            const u = `${this.endpoint}/v1/${name}:generateAccessToken`;
+            const body = {
+                delegates: this.delegates,
+                scope: this.targetScopes,
+                lifetime: this.lifetime + 's',
+            };
+            const res = await this.sourceClient.request({
+                url: u,
+                data: body,
+                method: 'POST',
+            });
+            const tokenResponse = res.data;
+            this.credentials.access_token = tokenResponse.accessToken;
+            this.credentials.expiry_date = Date.parse(tokenResponse.expireTime);
+            return {
+                tokens: this.credentials,
+                res,
+            };
+        }
+        catch (error) {
+            const status = (_c = (_b = (_a = error === null || error === void 0 ? void 0 : error.response) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.error) === null || _c === void 0 ? void 0 : _c.status;
+            const message = (_f = (_e = (_d = error === null || error === void 0 ? void 0 : error.response) === null || _d === void 0 ? void 0 : _d.data) === null || _e === void 0 ? void 0 : _e.error) === null || _f === void 0 ? void 0 : _f.message;
+            if (status && message) {
+                error.message = `${status}: unable to impersonate: ${message}`;
+                throw error;
+            }
+            else {
+                error.message = `unable to impersonate: ${error}`;
+                throw error;
+            }
+        }
+    }
+}
+exports.Impersonated = Impersonated;
+//# sourceMappingURL=impersonated.js.map
 
 /***/ }),
 
@@ -2526,7 +2701,7 @@ class ClusterClient {
     /**
      * Retrieves the auth client for authenticating requests.
      *
-     * @returns JWT | Compute | UserRefreshClient.
+     * @returns JWT | Compute | UserRefreshClient | Impersonated | BaseExternalAccountClient.
      */
     getAuthClient() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -11218,6 +11393,149 @@ var JSON = module.exports;
 
 /***/ }),
 
+/***/ 279:
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+// Copyright 2018 Google LLC
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getRetryConfig = void 0;
+async function getRetryConfig(err) {
+    var _a;
+    let config = getConfig(err);
+    if (!err || !err.config || (!config && !err.config.retry)) {
+        return { shouldRetry: false };
+    }
+    config = config || {};
+    config.currentRetryAttempt = config.currentRetryAttempt || 0;
+    config.retry =
+        config.retry === undefined || config.retry === null ? 3 : config.retry;
+    config.httpMethodsToRetry = config.httpMethodsToRetry || [
+        'GET',
+        'HEAD',
+        'PUT',
+        'OPTIONS',
+        'DELETE',
+    ];
+    config.noResponseRetries =
+        config.noResponseRetries === undefined || config.noResponseRetries === null
+            ? 2
+            : config.noResponseRetries;
+    // If this wasn't in the list of status codes where we want
+    // to automatically retry, return.
+    const retryRanges = [
+        // https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
+        // 1xx - Retry (Informational, request still processing)
+        // 2xx - Do not retry (Success)
+        // 3xx - Do not retry (Redirect)
+        // 4xx - Do not retry (Client errors)
+        // 429 - Retry ("Too Many Requests")
+        // 5xx - Retry (Server errors)
+        [100, 199],
+        [429, 429],
+        [500, 599],
+    ];
+    config.statusCodesToRetry = config.statusCodesToRetry || retryRanges;
+    // Put the config back into the err
+    err.config.retryConfig = config;
+    // Determine if we should retry the request
+    const shouldRetryFn = config.shouldRetry || shouldRetryRequest;
+    if (!(await shouldRetryFn(err))) {
+        return { shouldRetry: false, config: err.config };
+    }
+    // Calculate time to wait with exponential backoff.
+    // If this is the first retry, look for a configured retryDelay.
+    const retryDelay = config.currentRetryAttempt ? 0 : (_a = config.retryDelay) !== null && _a !== void 0 ? _a : 100;
+    // Formula: retryDelay + ((2^c - 1 / 2) * 1000)
+    const delay = retryDelay + ((Math.pow(2, config.currentRetryAttempt) - 1) / 2) * 1000;
+    // We're going to retry!  Incremenent the counter.
+    err.config.retryConfig.currentRetryAttempt += 1;
+    // Create a promise that invokes the retry after the backOffDelay
+    const backoff = new Promise(resolve => {
+        setTimeout(resolve, delay);
+    });
+    // Notify the user if they added an `onRetryAttempt` handler
+    if (config.onRetryAttempt) {
+        config.onRetryAttempt(err);
+    }
+    // Return the promise in which recalls Gaxios to retry the request
+    await backoff;
+    return { shouldRetry: true, config: err.config };
+}
+exports.getRetryConfig = getRetryConfig;
+/**
+ * Determine based on config if we should retry the request.
+ * @param err The GaxiosError passed to the interceptor.
+ */
+function shouldRetryRequest(err) {
+    const config = getConfig(err);
+    // node-fetch raises an AbortError if signaled:
+    // https://github.com/bitinn/node-fetch#request-cancellation-with-abortsignal
+    if (err.name === 'AbortError') {
+        return false;
+    }
+    // If there's no config, or retries are disabled, return.
+    if (!config || config.retry === 0) {
+        return false;
+    }
+    // Check if this error has no response (ETIMEDOUT, ENOTFOUND, etc)
+    if (!err.response &&
+        (config.currentRetryAttempt || 0) >= config.noResponseRetries) {
+        return false;
+    }
+    // Only retry with configured HttpMethods.
+    if (!err.config.method ||
+        config.httpMethodsToRetry.indexOf(err.config.method.toUpperCase()) < 0) {
+        return false;
+    }
+    // If this wasn't in the list of status codes where we want
+    // to automatically retry, return.
+    if (err.response && err.response.status) {
+        let isInRange = false;
+        for (const [min, max] of config.statusCodesToRetry) {
+            const status = err.response.status;
+            if (status >= min && status <= max) {
+                isInRange = true;
+                break;
+            }
+        }
+        if (!isInRange) {
+            return false;
+        }
+    }
+    // If we are out of retry attempts, return
+    config.currentRetryAttempt = config.currentRetryAttempt || 0;
+    if (config.currentRetryAttempt >= config.retry) {
+        return false;
+    }
+    return true;
+}
+/**
+ * Acquire the raxConfig object from an GaxiosError if available.
+ * @param err The Gaxios error with a config object.
+ */
+function getConfig(err) {
+    if (err && err.config && err.config.retryConfig) {
+        return err.config.retryConfig;
+    }
+    return;
+}
+//# sourceMappingURL=retry.js.map
+
+/***/ }),
+
 /***/ 284:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -12213,6 +12531,450 @@ function plural(ms, msAbs, n, name) {
   return Math.round(ms / n) + ' ' + name + (isPlural ? 's' : '');
 }
 
+
+/***/ }),
+
+/***/ 320:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.BaseExternalAccountClient = exports.CLOUD_RESOURCE_MANAGER = exports.EXTERNAL_ACCOUNT_TYPE = exports.EXPIRATION_TIME_OFFSET = void 0;
+const stream = __webpack_require__(413);
+const authclient_1 = __webpack_require__(616);
+const sts = __webpack_require__(732);
+/**
+ * The required token exchange grant_type: rfc8693#section-2.1
+ */
+const STS_GRANT_TYPE = 'urn:ietf:params:oauth:grant-type:token-exchange';
+/**
+ * The requested token exchange requested_token_type: rfc8693#section-2.1
+ */
+const STS_REQUEST_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:access_token';
+/** The default OAuth scope to request when none is provided. */
+const DEFAULT_OAUTH_SCOPE = 'https://www.googleapis.com/auth/cloud-platform';
+/** The google apis domain pattern. */
+const GOOGLE_APIS_DOMAIN_PATTERN = '\\.googleapis\\.com$';
+/** The variable portion pattern in a Google APIs domain. */
+const VARIABLE_PORTION_PATTERN = '[^\\.\\s\\/\\\\]+';
+/**
+ * Offset to take into account network delays and server clock skews.
+ */
+exports.EXPIRATION_TIME_OFFSET = 5 * 60 * 1000;
+/**
+ * The credentials JSON file type for external account clients.
+ * There are 3 types of JSON configs:
+ * 1. authorized_user => Google end user credential
+ * 2. service_account => Google service account credential
+ * 3. external_Account => non-GCP service (eg. AWS, Azure, K8s)
+ */
+exports.EXTERNAL_ACCOUNT_TYPE = 'external_account';
+/** Cloud resource manager URL used to retrieve project information. */
+exports.CLOUD_RESOURCE_MANAGER = 'https://cloudresourcemanager.googleapis.com/v1/projects/';
+/**
+ * Base external account client. This is used to instantiate AuthClients for
+ * exchanging external account credentials for GCP access token and authorizing
+ * requests to GCP APIs.
+ * The base class implements common logic for exchanging various type of
+ * external credentials for GCP access token. The logic of determining and
+ * retrieving the external credential based on the environment and
+ * credential_source will be left for the subclasses.
+ */
+class BaseExternalAccountClient extends authclient_1.AuthClient {
+    /**
+     * Instantiate a BaseExternalAccountClient instance using the provided JSON
+     * object loaded from an external account credentials file.
+     * @param options The external account options object typically loaded
+     *   from the external account JSON credential file.
+     * @param additionalOptions Optional additional behavior customization
+     *   options. These currently customize expiration threshold time and
+     *   whether to retry on 401/403 API request errors.
+     */
+    constructor(options, additionalOptions) {
+        super();
+        if (options.type !== exports.EXTERNAL_ACCOUNT_TYPE) {
+            throw new Error(`Expected "${exports.EXTERNAL_ACCOUNT_TYPE}" type but ` +
+                `received "${options.type}"`);
+        }
+        const clientAuth = options.client_id
+            ? {
+                confidentialClientType: 'basic',
+                clientId: options.client_id,
+                clientSecret: options.client_secret,
+            }
+            : undefined;
+        if (!this.validateGoogleAPIsUrl('sts', options.token_url)) {
+            throw new Error(`"${options.token_url}" is not a valid token url.`);
+        }
+        this.stsCredential = new sts.StsCredentials(options.token_url, clientAuth);
+        // Default OAuth scope. This could be overridden via public property.
+        this.scopes = [DEFAULT_OAUTH_SCOPE];
+        this.cachedAccessToken = null;
+        this.audience = options.audience;
+        this.subjectTokenType = options.subject_token_type;
+        this.quotaProjectId = options.quota_project_id;
+        if (typeof options.service_account_impersonation_url !== 'undefined' &&
+            !this.validateGoogleAPIsUrl('iamcredentials', options.service_account_impersonation_url)) {
+            throw new Error(`"${options.service_account_impersonation_url}" is ` +
+                'not a valid service account impersonation url.');
+        }
+        this.serviceAccountImpersonationUrl =
+            options.service_account_impersonation_url;
+        // As threshold could be zero,
+        // eagerRefreshThresholdMillis || EXPIRATION_TIME_OFFSET will override the
+        // zero value.
+        if (typeof (additionalOptions === null || additionalOptions === void 0 ? void 0 : additionalOptions.eagerRefreshThresholdMillis) !== 'number') {
+            this.eagerRefreshThresholdMillis = exports.EXPIRATION_TIME_OFFSET;
+        }
+        else {
+            this.eagerRefreshThresholdMillis = additionalOptions
+                .eagerRefreshThresholdMillis;
+        }
+        this.forceRefreshOnFailure = !!(additionalOptions === null || additionalOptions === void 0 ? void 0 : additionalOptions.forceRefreshOnFailure);
+        this.projectId = null;
+        this.projectNumber = this.getProjectNumber(this.audience);
+    }
+    /** The service account email to be impersonated, if available. */
+    getServiceAccountEmail() {
+        var _a;
+        if (this.serviceAccountImpersonationUrl) {
+            // Parse email from URL. The formal looks as follows:
+            // https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/name@project-id.iam.gserviceaccount.com:generateAccessToken
+            const re = /serviceAccounts\/(?<email>[^:]+):generateAccessToken$/;
+            const result = re.exec(this.serviceAccountImpersonationUrl);
+            return ((_a = result === null || result === void 0 ? void 0 : result.groups) === null || _a === void 0 ? void 0 : _a.email) || null;
+        }
+        return null;
+    }
+    /**
+     * Provides a mechanism to inject GCP access tokens directly.
+     * When the provided credential expires, a new credential, using the
+     * external account options, is retrieved.
+     * @param credentials The Credentials object to set on the current client.
+     */
+    setCredentials(credentials) {
+        super.setCredentials(credentials);
+        this.cachedAccessToken = credentials;
+    }
+    /**
+     * @return A promise that resolves with the current GCP access token
+     *   response. If the current credential is expired, a new one is retrieved.
+     */
+    async getAccessToken() {
+        // If cached access token is unavailable or expired, force refresh.
+        if (!this.cachedAccessToken || this.isExpired(this.cachedAccessToken)) {
+            await this.refreshAccessTokenAsync();
+        }
+        // Return GCP access token in GetAccessTokenResponse format.
+        return {
+            token: this.cachedAccessToken.access_token,
+            res: this.cachedAccessToken.res,
+        };
+    }
+    /**
+     * The main authentication interface. It takes an optional url which when
+     * present is the endpoint being accessed, and returns a Promise which
+     * resolves with authorization header fields.
+     *
+     * The result has the form:
+     * { Authorization: 'Bearer <access_token_value>' }
+     */
+    async getRequestHeaders() {
+        const accessTokenResponse = await this.getAccessToken();
+        const headers = {
+            Authorization: `Bearer ${accessTokenResponse.token}`,
+        };
+        return this.addSharedMetadataHeaders(headers);
+    }
+    request(opts, callback) {
+        if (callback) {
+            this.requestAsync(opts).then(r => callback(null, r), e => {
+                return callback(e, e.response);
+            });
+        }
+        else {
+            return this.requestAsync(opts);
+        }
+    }
+    /**
+     * @return A promise that resolves with the project ID corresponding to the
+     *   current workload identity pool. When not determinable, this resolves with
+     *   null.
+     *   This is introduced to match the current pattern of using the Auth
+     *   library:
+     *   const projectId = await auth.getProjectId();
+     *   const url = `https://dns.googleapis.com/dns/v1/projects/${projectId}`;
+     *   const res = await client.request({ url });
+     *   The resource may not have permission
+     *   (resourcemanager.projects.get) to call this API or the required
+     *   scopes may not be selected:
+     *   https://cloud.google.com/resource-manager/reference/rest/v1/projects/get#authorization-scopes
+     */
+    async getProjectId() {
+        if (this.projectId) {
+            // Return previously determined project ID.
+            return this.projectId;
+        }
+        else if (this.projectNumber) {
+            // Preferable not to use request() to avoid retrial policies.
+            const headers = await this.getRequestHeaders();
+            const response = await this.transporter.request({
+                headers,
+                url: `${exports.CLOUD_RESOURCE_MANAGER}${this.projectNumber}`,
+                responseType: 'json',
+            });
+            this.projectId = response.data.projectId;
+            return this.projectId;
+        }
+        return null;
+    }
+    /**
+     * Authenticates the provided HTTP request, processes it and resolves with the
+     * returned response.
+     * @param opts The HTTP request options.
+     * @param retry Whether the current attempt is a retry after a failed attempt.
+     * @return A promise that resolves with the successful response.
+     */
+    async requestAsync(opts, retry = false) {
+        let response;
+        try {
+            const requestHeaders = await this.getRequestHeaders();
+            opts.headers = opts.headers || {};
+            if (requestHeaders && requestHeaders['x-goog-user-project']) {
+                opts.headers['x-goog-user-project'] =
+                    requestHeaders['x-goog-user-project'];
+            }
+            if (requestHeaders && requestHeaders.Authorization) {
+                opts.headers.Authorization = requestHeaders.Authorization;
+            }
+            response = await this.transporter.request(opts);
+        }
+        catch (e) {
+            const res = e.response;
+            if (res) {
+                const statusCode = res.status;
+                // Retry the request for metadata if the following criteria are true:
+                // - We haven't already retried.  It only makes sense to retry once.
+                // - The response was a 401 or a 403
+                // - The request didn't send a readableStream
+                // - forceRefreshOnFailure is true
+                const isReadableStream = res.config.data instanceof stream.Readable;
+                const isAuthErr = statusCode === 401 || statusCode === 403;
+                if (!retry &&
+                    isAuthErr &&
+                    !isReadableStream &&
+                    this.forceRefreshOnFailure) {
+                    await this.refreshAccessTokenAsync();
+                    return await this.requestAsync(opts, true);
+                }
+            }
+            throw e;
+        }
+        return response;
+    }
+    /**
+     * Forces token refresh, even if unexpired tokens are currently cached.
+     * External credentials are exchanged for GCP access tokens via the token
+     * exchange endpoint and other settings provided in the client options
+     * object.
+     * If the service_account_impersonation_url is provided, an additional
+     * step to exchange the external account GCP access token for a service
+     * account impersonated token is performed.
+     * @return A promise that resolves with the fresh GCP access tokens.
+     */
+    async refreshAccessTokenAsync() {
+        // Retrieve the external credential.
+        const subjectToken = await this.retrieveSubjectToken();
+        // Construct the STS credentials options.
+        const stsCredentialsOptions = {
+            grantType: STS_GRANT_TYPE,
+            audience: this.audience,
+            requestedTokenType: STS_REQUEST_TOKEN_TYPE,
+            subjectToken,
+            subjectTokenType: this.subjectTokenType,
+            // generateAccessToken requires the provided access token to have
+            // scopes:
+            // https://www.googleapis.com/auth/iam or
+            // https://www.googleapis.com/auth/cloud-platform
+            // The new service account access token scopes will match the user
+            // provided ones.
+            scope: this.serviceAccountImpersonationUrl
+                ? [DEFAULT_OAUTH_SCOPE]
+                : this.getScopesArray(),
+        };
+        // Exchange the external credentials for a GCP access token.
+        const stsResponse = await this.stsCredential.exchangeToken(stsCredentialsOptions);
+        if (this.serviceAccountImpersonationUrl) {
+            this.cachedAccessToken = await this.getImpersonatedAccessToken(stsResponse.access_token);
+        }
+        else if (stsResponse.expires_in) {
+            // Save response in cached access token.
+            this.cachedAccessToken = {
+                access_token: stsResponse.access_token,
+                expiry_date: new Date().getTime() + stsResponse.expires_in * 1000,
+                res: stsResponse.res,
+            };
+        }
+        else {
+            // Save response in cached access token.
+            this.cachedAccessToken = {
+                access_token: stsResponse.access_token,
+                res: stsResponse.res,
+            };
+        }
+        // Save credentials.
+        this.credentials = {};
+        Object.assign(this.credentials, this.cachedAccessToken);
+        delete this.credentials.res;
+        // Trigger tokens event to notify external listeners.
+        this.emit('tokens', {
+            refresh_token: null,
+            expiry_date: this.cachedAccessToken.expiry_date,
+            access_token: this.cachedAccessToken.access_token,
+            token_type: 'Bearer',
+            id_token: null,
+        });
+        // Return the cached access token.
+        return this.cachedAccessToken;
+    }
+    /**
+     * Returns the workload identity pool project number if it is determinable
+     * from the audience resource name.
+     * @param audience The STS audience used to determine the project number.
+     * @return The project number associated with the workload identity pool, if
+     *   this can be determined from the STS audience field. Otherwise, null is
+     *   returned.
+     */
+    getProjectNumber(audience) {
+        // STS audience pattern:
+        // //iam.googleapis.com/projects/$PROJECT_NUMBER/locations/...
+        const match = audience.match(/\/projects\/([^/]+)/);
+        if (!match) {
+            return null;
+        }
+        return match[1];
+    }
+    /**
+     * Exchanges an external account GCP access token for a service
+     * account impersonated access token using iamcredentials
+     * GenerateAccessToken API.
+     * @param token The access token to exchange for a service account access
+     *   token.
+     * @return A promise that resolves with the service account impersonated
+     *   credentials response.
+     */
+    async getImpersonatedAccessToken(token) {
+        const opts = {
+            url: this.serviceAccountImpersonationUrl,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+            data: {
+                scope: this.getScopesArray(),
+            },
+            responseType: 'json',
+        };
+        const response = await this.transporter.request(opts);
+        const successResponse = response.data;
+        return {
+            access_token: successResponse.accessToken,
+            // Convert from ISO format to timestamp.
+            expiry_date: new Date(successResponse.expireTime).getTime(),
+            res: response,
+        };
+    }
+    /**
+     * Returns whether the provided credentials are expired or not.
+     * If there is no expiry time, assumes the token is not expired or expiring.
+     * @param accessToken The credentials to check for expiration.
+     * @return Whether the credentials are expired or not.
+     */
+    isExpired(accessToken) {
+        const now = new Date().getTime();
+        return accessToken.expiry_date
+            ? now >= accessToken.expiry_date - this.eagerRefreshThresholdMillis
+            : false;
+    }
+    /**
+     * @return The list of scopes for the requested GCP access token.
+     */
+    getScopesArray() {
+        // Since scopes can be provided as string or array, the type should
+        // be normalized.
+        if (typeof this.scopes === 'string') {
+            return [this.scopes];
+        }
+        else if (typeof this.scopes === 'undefined') {
+            return [DEFAULT_OAUTH_SCOPE];
+        }
+        else {
+            return this.scopes;
+        }
+    }
+    /**
+     * Checks whether Google APIs URL is valid.
+     * @param apiName The apiName of url.
+     * @param url The Google API URL to validate.
+     * @return Whether the URL is valid or not.
+     */
+    validateGoogleAPIsUrl(apiName, url) {
+        let parsedUrl;
+        // Return false if error is thrown during parsing URL.
+        try {
+            parsedUrl = new URL(url);
+        }
+        catch (e) {
+            return false;
+        }
+        const urlDomain = parsedUrl.hostname;
+        // Check the protocol is https.
+        if (parsedUrl.protocol !== 'https:') {
+            return false;
+        }
+        const googleAPIsDomainPatterns = [
+            new RegExp('^' +
+                VARIABLE_PORTION_PATTERN +
+                '\\.' +
+                apiName +
+                GOOGLE_APIS_DOMAIN_PATTERN),
+            new RegExp('^' + apiName + GOOGLE_APIS_DOMAIN_PATTERN),
+            new RegExp('^' +
+                apiName +
+                '\\.' +
+                VARIABLE_PORTION_PATTERN +
+                GOOGLE_APIS_DOMAIN_PATTERN),
+            new RegExp('^' +
+                VARIABLE_PORTION_PATTERN +
+                '\\-' +
+                apiName +
+                GOOGLE_APIS_DOMAIN_PATTERN),
+        ];
+        for (const googleAPIsDomainPattern of googleAPIsDomainPatterns) {
+            if (urlDomain.match(googleAPIsDomainPattern)) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+exports.BaseExternalAccountClient = BaseExternalAccountClient;
+//# sourceMappingURL=baseexternalclient.js.map
 
 /***/ }),
 
@@ -15053,6 +15815,167 @@ module.exports = createHttpsProxyAgent;
 
 /***/ }),
 
+/***/ 345:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+var _a, _b, _c;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.IdentityPoolClient = void 0;
+const fs = __webpack_require__(747);
+const util_1 = __webpack_require__(669);
+const baseexternalclient_1 = __webpack_require__(320);
+// fs.readfile is undefined in browser karma tests causing
+// `npm run browser-test` to fail as test.oauth2.ts imports this file via
+// src/index.ts.
+// Fallback to void function to avoid promisify throwing a TypeError.
+const readFile = util_1.promisify((_a = fs.readFile) !== null && _a !== void 0 ? _a : (() => { }));
+const realpath = util_1.promisify((_b = fs.realpath) !== null && _b !== void 0 ? _b : (() => { }));
+const lstat = util_1.promisify((_c = fs.lstat) !== null && _c !== void 0 ? _c : (() => { }));
+/**
+ * Defines the Url-sourced and file-sourced external account clients mainly
+ * used for K8s and Azure workloads.
+ */
+class IdentityPoolClient extends baseexternalclient_1.BaseExternalAccountClient {
+    /**
+     * Instantiate an IdentityPoolClient instance using the provided JSON
+     * object loaded from an external account credentials file.
+     * An error is thrown if the credential is not a valid file-sourced or
+     * url-sourced credential.
+     * @param options The external account options object typically loaded
+     *   from the external account JSON credential file.
+     * @param additionalOptions Optional additional behavior customization
+     *   options. These currently customize expiration threshold time and
+     *   whether to retry on 401/403 API request errors.
+     */
+    constructor(options, additionalOptions) {
+        var _a, _b;
+        super(options, additionalOptions);
+        this.file = options.credential_source.file;
+        this.url = options.credential_source.url;
+        this.headers = options.credential_source.headers;
+        if (!this.file && !this.url) {
+            throw new Error('No valid Identity Pool "credential_source" provided');
+        }
+        // Text is the default format type.
+        this.formatType = ((_a = options.credential_source.format) === null || _a === void 0 ? void 0 : _a.type) || 'text';
+        this.formatSubjectTokenFieldName = (_b = options.credential_source.format) === null || _b === void 0 ? void 0 : _b.subject_token_field_name;
+        if (this.formatType !== 'json' && this.formatType !== 'text') {
+            throw new Error(`Invalid credential_source format "${this.formatType}"`);
+        }
+        if (this.formatType === 'json' && !this.formatSubjectTokenFieldName) {
+            throw new Error('Missing subject_token_field_name for JSON credential_source format');
+        }
+    }
+    /**
+     * Triggered when a external subject token is needed to be exchanged for a GCP
+     * access token via GCP STS endpoint.
+     * This uses the `options.credential_source` object to figure out how
+     * to retrieve the token using the current environment. In this case,
+     * this either retrieves the local credential from a file location (k8s
+     * workload) or by sending a GET request to a local metadata server (Azure
+     * workloads).
+     * @return A promise that resolves with the external subject token.
+     */
+    async retrieveSubjectToken() {
+        if (this.file) {
+            return await this.getTokenFromFile(this.file, this.formatType, this.formatSubjectTokenFieldName);
+        }
+        return await this.getTokenFromUrl(this.url, this.formatType, this.formatSubjectTokenFieldName, this.headers);
+    }
+    /**
+     * Looks up the external subject token in the file path provided and
+     * resolves with that token.
+     * @param file The file path where the external credential is located.
+     * @param formatType The token file or URL response type (JSON or text).
+     * @param formatSubjectTokenFieldName For JSON response types, this is the
+     *   subject_token field name. For Azure, this is access_token. For text
+     *   response types, this is ignored.
+     * @return A promise that resolves with the external subject token.
+     */
+    async getTokenFromFile(filePath, formatType, formatSubjectTokenFieldName) {
+        // Make sure there is a file at the path. lstatSync will throw if there is
+        // nothing there.
+        try {
+            // Resolve path to actual file in case of symlink. Expect a thrown error
+            // if not resolvable.
+            filePath = await realpath(filePath);
+            if (!(await lstat(filePath)).isFile()) {
+                throw new Error();
+            }
+        }
+        catch (err) {
+            err.message = `The file at ${filePath} does not exist, or it is not a file. ${err.message}`;
+            throw err;
+        }
+        let subjectToken;
+        const rawText = await readFile(filePath, { encoding: 'utf8' });
+        if (formatType === 'text') {
+            subjectToken = rawText;
+        }
+        else if (formatType === 'json' && formatSubjectTokenFieldName) {
+            const json = JSON.parse(rawText);
+            subjectToken = json[formatSubjectTokenFieldName];
+        }
+        if (!subjectToken) {
+            throw new Error('Unable to parse the subject_token from the credential_source file');
+        }
+        return subjectToken;
+    }
+    /**
+     * Sends a GET request to the URL provided and resolves with the returned
+     * external subject token.
+     * @param url The URL to call to retrieve the subject token. This is typically
+     *   a local metadata server.
+     * @param formatType The token file or URL response type (JSON or text).
+     * @param formatSubjectTokenFieldName For JSON response types, this is the
+     *   subject_token field name. For Azure, this is access_token. For text
+     *   response types, this is ignored.
+     * @param headers The optional additional headers to send with the request to
+     *   the metadata server url.
+     * @return A promise that resolves with the external subject token.
+     */
+    async getTokenFromUrl(url, formatType, formatSubjectTokenFieldName, headers) {
+        const opts = {
+            url,
+            method: 'GET',
+            headers,
+            responseType: formatType,
+        };
+        let subjectToken;
+        if (formatType === 'text') {
+            const response = await this.transporter.request(opts);
+            subjectToken = response.data;
+        }
+        else if (formatType === 'json' && formatSubjectTokenFieldName) {
+            const response = await this.transporter.request(opts);
+            subjectToken = response.data[formatSubjectTokenFieldName];
+        }
+        if (!subjectToken) {
+            throw new Error('Unable to parse the subject_token from the credential_source URL');
+        }
+        return subjectToken;
+    }
+}
+exports.IdentityPoolClient = IdentityPoolClient;
+//# sourceMappingURL=identitypoolclient.js.map
+
+/***/ }),
+
 /***/ 346:
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
@@ -15090,11 +16013,35 @@ class JWTAccess {
      * @param key the private key that will be used to sign the token.
      * @param keyId the ID of the private key used to sign the token.
      */
-    constructor(email, key, keyId) {
-        this.cache = new LRU({ max: 500, maxAge: 60 * 60 * 1000 });
+    constructor(email, key, keyId, eagerRefreshThresholdMillis) {
+        this.cache = new LRU({
+            max: 500,
+            maxAge: 60 * 60 * 1000,
+        });
         this.email = email;
         this.key = key;
         this.keyId = keyId;
+        this.eagerRefreshThresholdMillis = eagerRefreshThresholdMillis !== null && eagerRefreshThresholdMillis !== void 0 ? eagerRefreshThresholdMillis : 5 * 60 * 1000;
+    }
+    /**
+     * Ensures that we're caching a key appropriately, giving precedence to scopes vs. url
+     *
+     * @param url The URI being authorized.
+     * @param scopes The scope or scopes being authorized
+     * @returns A string that returns the cached key.
+     */
+    getCachedKey(url, scopes) {
+        let cacheKey = url;
+        if (scopes && Array.isArray(scopes) && scopes.length) {
+            cacheKey = url ? `${url}_${scopes.join('_')}` : `${scopes.join('_')}`;
+        }
+        else if (typeof scopes === 'string') {
+            cacheKey = url ? `${url}_${scopes}` : scopes;
+        }
+        if (!cacheKey) {
+            throw Error('Scopes or url must be provided');
+        }
+        return cacheKey;
     }
     /**
      * Get a non-expired access token, after refreshing if necessary.
@@ -15104,23 +16051,42 @@ class JWTAccess {
      * include in the payload.
      * @returns An object that includes the authorization header.
      */
-    getRequestHeaders(url, additionalClaims) {
-        const cachedToken = this.cache.get(url);
-        if (cachedToken) {
-            return cachedToken;
+    getRequestHeaders(url, additionalClaims, scopes) {
+        // Return cached authorization headers, unless we are within
+        // eagerRefreshThresholdMillis ms of them expiring:
+        const key = this.getCachedKey(url, scopes);
+        const cachedToken = this.cache.get(key);
+        const now = Date.now();
+        if (cachedToken &&
+            cachedToken.expiration - now > this.eagerRefreshThresholdMillis) {
+            return cachedToken.headers;
         }
-        const iat = Math.floor(new Date().getTime() / 1000);
-        const exp = iat + 3600; // 3600 seconds = 1 hour
-        // The payload used for signed JWT headers has:
-        // iss == sub == <client email>
-        // aud == <the authorization uri>
-        const defaultClaims = {
-            iss: this.email,
-            sub: this.email,
-            aud: url,
-            exp,
-            iat,
-        };
+        const iat = Math.floor(Date.now() / 1000);
+        const exp = JWTAccess.getExpirationTime(iat);
+        let defaultClaims;
+        // Turn scopes into space-separated string
+        if (Array.isArray(scopes)) {
+            scopes = scopes.join(' ');
+        }
+        // If scopes are specified, sign with scopes
+        if (scopes) {
+            defaultClaims = {
+                iss: this.email,
+                sub: this.email,
+                scope: scopes,
+                exp,
+                iat,
+            };
+        }
+        else {
+            defaultClaims = {
+                iss: this.email,
+                sub: this.email,
+                aud: url,
+                exp,
+                iat,
+            };
+        }
         // if additionalClaims are provided, ensure they do not collide with
         // other required claims.
         if (additionalClaims) {
@@ -15137,8 +16103,21 @@ class JWTAccess {
         // Sign the jwt and add it to the cache
         const signedJWT = jws.sign({ header, payload, secret: this.key });
         const headers = { Authorization: `Bearer ${signedJWT}` };
-        this.cache.set(url, headers);
+        this.cache.set(key, {
+            expiration: exp * 1000,
+            headers,
+        });
         return headers;
+    }
+    /**
+     * Returns an expiration time for the JWT token.
+     *
+     * @param iat The issued at time for the JWT.
+     * @returns An expiration time for the JWT.
+     */
+    static getExpirationTime(iat) {
+        const exp = iat + 3600; // 3600 seconds = 1 hour
+        return exp;
     }
     /**
      * Create a JWTAccess credentials instance using the given input options.
@@ -15375,6 +16354,7 @@ const base64js = __webpack_require__(397);
 if (typeof process === 'undefined' && typeof TextEncoder === 'undefined') {
     __webpack_require__(671);
 }
+const crypto_1 = __webpack_require__(984);
 class BrowserCrypto {
     constructor() {
         if (typeof window === 'undefined' ||
@@ -15444,6 +16424,46 @@ class BrowserCrypto {
         const uint8array = new TextEncoder().encode(text);
         const result = base64js.fromByteArray(uint8array);
         return result;
+    }
+    /**
+     * Computes the SHA-256 hash of the provided string.
+     * @param str The plain text string to hash.
+     * @return A promise that resolves with the SHA-256 hash of the provided
+     *   string in hexadecimal encoding.
+     */
+    async sha256DigestHex(str) {
+        // SubtleCrypto digest() method is async, so we must make
+        // this method async as well.
+        // To calculate SHA256 digest using SubtleCrypto, we first
+        // need to convert an input string to an ArrayBuffer:
+        // eslint-disable-next-line node/no-unsupported-features/node-builtins
+        const inputBuffer = new TextEncoder().encode(str);
+        // Result is ArrayBuffer as well.
+        const outputBuffer = await window.crypto.subtle.digest('SHA-256', inputBuffer);
+        return crypto_1.fromArrayBufferToHex(outputBuffer);
+    }
+    /**
+     * Computes the HMAC hash of a message using the provided crypto key and the
+     * SHA-256 algorithm.
+     * @param key The secret crypto key in utf-8 or ArrayBuffer format.
+     * @param msg The plain text message.
+     * @return A promise that resolves with the HMAC-SHA256 hash in ArrayBuffer
+     *   format.
+     */
+    async signWithHmacSha256(key, msg) {
+        // Convert key, if provided in ArrayBuffer format, to string.
+        const rawKey = typeof key === 'string'
+            ? key
+            : String.fromCharCode(...new Uint16Array(key));
+        // eslint-disable-next-line node/no-unsupported-features/node-builtins
+        const enc = new TextEncoder();
+        const cryptoKey = await window.crypto.subtle.importKey('raw', enc.encode(rawKey), {
+            name: 'HMAC',
+            hash: {
+                name: 'SHA-256',
+            },
+        }, false, ['sign']);
+        return window.crypto.subtle.sign('HMAC', cryptoKey, enc.encode(msg));
     }
 }
 exports.BrowserCrypto = BrowserCrypto;
@@ -15520,8 +16540,46 @@ class NodeCrypto {
     encodeBase64StringUtf8(text) {
         return Buffer.from(text, 'utf-8').toString('base64');
     }
+    /**
+     * Computes the SHA-256 hash of the provided string.
+     * @param str The plain text string to hash.
+     * @return A promise that resolves with the SHA-256 hash of the provided
+     *   string in hexadecimal encoding.
+     */
+    async sha256DigestHex(str) {
+        return crypto.createHash('sha256').update(str).digest('hex');
+    }
+    /**
+     * Computes the HMAC hash of a message using the provided crypto key and the
+     * SHA-256 algorithm.
+     * @param key The secret crypto key in utf-8 or ArrayBuffer format.
+     * @param msg The plain text message.
+     * @return A promise that resolves with the HMAC-SHA256 hash in ArrayBuffer
+     *   format.
+     */
+    async signWithHmacSha256(key, msg) {
+        const cryptoKey = typeof key === 'string' ? key : toBuffer(key);
+        return toArrayBuffer(crypto.createHmac('sha256', cryptoKey).update(msg).digest());
+    }
 }
 exports.NodeCrypto = NodeCrypto;
+/**
+ * Converts a Node.js Buffer to an ArrayBuffer.
+ * https://stackoverflow.com/questions/8609289/convert-a-binary-nodejs-buffer-to-javascript-arraybuffer
+ * @param buffer The Buffer input to covert.
+ * @return The ArrayBuffer representation of the input.
+ */
+function toArrayBuffer(buffer) {
+    return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+}
+/**
+ * Converts an ArrayBuffer to a Node.js Buffer.
+ * @param arrayBuffer The ArrayBuffer input to covert.
+ * @return The Buffer representation of the input.
+ */
+function toBuffer(arrayBuffer) {
+    return Buffer.from(arrayBuffer);
+}
 //# sourceMappingURL=crypto.js.map
 
 /***/ }),
@@ -16241,7 +17299,7 @@ module.exports = require("crypto");
  */
 var forge = __webpack_require__(763);
 __webpack_require__(183);
-__webpack_require__(849);
+__webpack_require__(530);
 __webpack_require__(795);
 __webpack_require__(628);
 __webpack_require__(973);
@@ -20293,6 +21351,317 @@ forge.tls.createConnection = tls.createConnection;
 
 /***/ }),
 
+/***/ 420:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2018 Google LLC
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Gaxios = void 0;
+const extend_1 = __importDefault(__webpack_require__(374));
+const https_1 = __webpack_require__(211);
+const node_fetch_1 = __importDefault(__webpack_require__(454));
+const querystring_1 = __importDefault(__webpack_require__(191));
+const is_stream_1 = __importDefault(__webpack_require__(323));
+const url_1 = __webpack_require__(835);
+const common_1 = __webpack_require__(522);
+const retry_1 = __webpack_require__(767);
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const fetch = hasFetch() ? window.fetch : node_fetch_1.default;
+function hasWindow() {
+    return typeof window !== 'undefined' && !!window;
+}
+function hasFetch() {
+    return hasWindow() && !!window.fetch;
+}
+function hasBuffer() {
+    return typeof Buffer !== 'undefined';
+}
+function hasHeader(options, header) {
+    return !!getHeader(options, header);
+}
+function getHeader(options, header) {
+    header = header.toLowerCase();
+    for (const key of Object.keys((options === null || options === void 0 ? void 0 : options.headers) || {})) {
+        if (header === key.toLowerCase()) {
+            return options.headers[key];
+        }
+    }
+    return undefined;
+}
+let HttpsProxyAgent;
+function loadProxy() {
+    const proxy = process.env.HTTPS_PROXY ||
+        process.env.https_proxy ||
+        process.env.HTTP_PROXY ||
+        process.env.http_proxy;
+    if (proxy) {
+        HttpsProxyAgent = __webpack_require__(338);
+    }
+    return proxy;
+}
+loadProxy();
+function skipProxy(url) {
+    var _a;
+    const noProxyEnv = (_a = process.env.NO_PROXY) !== null && _a !== void 0 ? _a : process.env.no_proxy;
+    if (!noProxyEnv) {
+        return false;
+    }
+    const noProxyUrls = noProxyEnv.split(',');
+    const parsedURL = new url_1.URL(url);
+    return !!noProxyUrls.find(url => {
+        if (url.startsWith('*.') || url.startsWith('.')) {
+            url = url.replace('*', '');
+            return parsedURL.hostname.endsWith(url);
+        }
+        else {
+            return url === parsedURL.origin || url === parsedURL.hostname;
+        }
+    });
+}
+// Figure out if we should be using a proxy. Only if it's required, load
+// the https-proxy-agent module as it adds startup cost.
+function getProxy(url) {
+    // If there is a match between the no_proxy env variables and the url, then do not proxy
+    if (skipProxy(url)) {
+        return undefined;
+        // If there is not a match between the no_proxy env variables and the url, check to see if there should be a proxy
+    }
+    else {
+        return loadProxy();
+    }
+}
+class Gaxios {
+    /**
+     * The Gaxios class is responsible for making HTTP requests.
+     * @param defaults The default set of options to be used for this instance.
+     */
+    constructor(defaults) {
+        this.agentCache = new Map();
+        this.defaults = defaults || {};
+    }
+    /**
+     * Perform an HTTP request with the given options.
+     * @param opts Set of HTTP options that will be used for this HTTP request.
+     */
+    async request(opts = {}) {
+        opts = this.validateOpts(opts);
+        return this._request(opts);
+    }
+    async _defaultAdapter(opts) {
+        const fetchImpl = opts.fetchImplementation || fetch;
+        const res = (await fetchImpl(opts.url, opts));
+        const data = await this.getResponseData(opts, res);
+        return this.translateResponse(opts, res, data);
+    }
+    /**
+     * Internal, retryable version of the `request` method.
+     * @param opts Set of HTTP options that will be used for this HTTP request.
+     */
+    async _request(opts = {}) {
+        try {
+            let translatedResponse;
+            if (opts.adapter) {
+                translatedResponse = await opts.adapter(opts, this._defaultAdapter.bind(this));
+            }
+            else {
+                translatedResponse = await this._defaultAdapter(opts);
+            }
+            if (!opts.validateStatus(translatedResponse.status)) {
+                throw new common_1.GaxiosError(`Request failed with status code ${translatedResponse.status}`, opts, translatedResponse);
+            }
+            return translatedResponse;
+        }
+        catch (e) {
+            const err = e;
+            err.config = opts;
+            const { shouldRetry, config } = await retry_1.getRetryConfig(e);
+            if (shouldRetry && config) {
+                err.config.retryConfig.currentRetryAttempt =
+                    config.retryConfig.currentRetryAttempt;
+                return this._request(err.config);
+            }
+            throw err;
+        }
+    }
+    async getResponseData(opts, res) {
+        switch (opts.responseType) {
+            case 'stream':
+                return res.body;
+            case 'json': {
+                let data = await res.text();
+                try {
+                    data = JSON.parse(data);
+                }
+                catch (_a) {
+                    // continue
+                }
+                return data;
+            }
+            case 'arraybuffer':
+                return res.arrayBuffer();
+            case 'blob':
+                return res.blob();
+            default:
+                return res.text();
+        }
+    }
+    /**
+     * Validates the options, and merges them with defaults.
+     * @param opts The original options passed from the client.
+     */
+    validateOpts(options) {
+        const opts = extend_1.default(true, {}, this.defaults, options);
+        if (!opts.url) {
+            throw new Error('URL is required.');
+        }
+        // baseUrl has been deprecated, remove in 2.0
+        const baseUrl = opts.baseUrl || opts.baseURL;
+        if (baseUrl) {
+            opts.url = baseUrl + opts.url;
+        }
+        opts.paramsSerializer = opts.paramsSerializer || this.paramsSerializer;
+        if (opts.params && Object.keys(opts.params).length > 0) {
+            let additionalQueryParams = opts.paramsSerializer(opts.params);
+            if (additionalQueryParams.startsWith('?')) {
+                additionalQueryParams = additionalQueryParams.slice(1);
+            }
+            const prefix = opts.url.includes('?') ? '&' : '?';
+            opts.url = opts.url + prefix + additionalQueryParams;
+        }
+        if (typeof options.maxContentLength === 'number') {
+            opts.size = options.maxContentLength;
+        }
+        if (typeof options.maxRedirects === 'number') {
+            opts.follow = options.maxRedirects;
+        }
+        opts.headers = opts.headers || {};
+        if (opts.data) {
+            if (is_stream_1.default.readable(opts.data)) {
+                opts.body = opts.data;
+            }
+            else if (hasBuffer() && Buffer.isBuffer(opts.data)) {
+                // Do not attempt to JSON.stringify() a Buffer:
+                opts.body = opts.data;
+                if (!hasHeader(opts, 'Content-Type')) {
+                    opts.headers['Content-Type'] = 'application/json';
+                }
+            }
+            else if (typeof opts.data === 'object') {
+                // If www-form-urlencoded content type has been set, but data is
+                // provided as an object, serialize the content using querystring:
+                if (getHeader(opts, 'content-type') ===
+                    'application/x-www-form-urlencoded') {
+                    opts.body = opts.paramsSerializer(opts.data);
+                }
+                else {
+                    if (!hasHeader(opts, 'Content-Type')) {
+                        opts.headers['Content-Type'] = 'application/json';
+                    }
+                    opts.body = JSON.stringify(opts.data);
+                }
+            }
+            else {
+                opts.body = opts.data;
+            }
+        }
+        opts.validateStatus = opts.validateStatus || this.validateStatus;
+        opts.responseType = opts.responseType || 'json';
+        if (!opts.headers['Accept'] && opts.responseType === 'json') {
+            opts.headers['Accept'] = 'application/json';
+        }
+        opts.method = opts.method || 'GET';
+        const proxy = getProxy(opts.url);
+        if (proxy) {
+            if (this.agentCache.has(proxy)) {
+                opts.agent = this.agentCache.get(proxy);
+            }
+            else {
+                // Proxy is being used in conjunction with mTLS.
+                if (opts.cert && opts.key) {
+                    const parsedURL = new url_1.URL(proxy);
+                    opts.agent = new HttpsProxyAgent({
+                        port: parsedURL.port,
+                        host: parsedURL.host,
+                        protocol: parsedURL.protocol,
+                        cert: opts.cert,
+                        key: opts.key,
+                    });
+                }
+                else {
+                    opts.agent = new HttpsProxyAgent(proxy);
+                }
+                this.agentCache.set(proxy, opts.agent);
+            }
+        }
+        else if (opts.cert && opts.key) {
+            // Configure client for mTLS:
+            if (this.agentCache.has(opts.key)) {
+                opts.agent = this.agentCache.get(opts.key);
+            }
+            else {
+                opts.agent = new https_1.Agent({
+                    cert: opts.cert,
+                    key: opts.key,
+                });
+                this.agentCache.set(opts.key, opts.agent);
+            }
+        }
+        return opts;
+    }
+    /**
+     * By default, throw for any non-2xx status code
+     * @param status status code from the HTTP response
+     */
+    validateStatus(status) {
+        return status >= 200 && status < 300;
+    }
+    /**
+     * Encode a set of key/value pars into a querystring format (?foo=bar&baz=boo)
+     * @param params key value pars to encode
+     */
+    paramsSerializer(params) {
+        return querystring_1.default.stringify(params);
+    }
+    translateResponse(opts, res, data) {
+        // headers need to be converted from a map to an obj
+        const headers = {};
+        res.headers.forEach((value, key) => {
+            headers[key] = value;
+        });
+        return {
+            config: opts,
+            data: data,
+            headers,
+            status: res.status,
+            statusText: res.statusText,
+            // XMLHttpRequestLike
+            request: {
+                responseURL: res.url,
+            },
+        };
+    }
+}
+exports.Gaxios = Gaxios;
+//# sourceMappingURL=gaxios.js.map
+
+/***/ }),
+
 /***/ 421:
 /***/ (function(module) {
 
@@ -20300,10 +21669,10 @@ forge.tls.createConnection = tls.createConnection;
   'use strict';
 
 /*
- *      bignumber.js v9.0.0
+ *      bignumber.js v9.0.1
  *      A JavaScript library for arbitrary-precision arithmetic.
  *      https://github.com/MikeMcl/bignumber.js
- *      Copyright (c) 2019 Michael Mclaughlin <M8ch88l@gmail.com>
+ *      Copyright (c) 2020 Michael Mclaughlin <M8ch88l@gmail.com>
  *      MIT Licensed.
  *
  *      BigNumber.prototype methods     |  BigNumber methods
@@ -20839,9 +22208,9 @@ forge.tls.createConnection = tls.createConnection;
           if (obj.hasOwnProperty(p = 'ALPHABET')) {
             v = obj[p];
 
-            // Disallow if only one character,
+            // Disallow if less than two characters,
             // or if it contains '+', '-', '.', whitespace, or a repeated character.
-            if (typeof v == 'string' && !/^.$|[+-.\s]|(.).*\1/.test(v)) {
+            if (typeof v == 'string' && !/^.?$|[+\-.\s]|(.).*\1/.test(v)) {
               ALPHABET = v;
             } else {
               throw Error
@@ -22694,7 +24063,7 @@ forge.tls.createConnection = tls.createConnection;
         e = bitFloor((e + 1) / 2) - (e < 0 || e % 2);
 
         if (s == 1 / 0) {
-          n = '1e' + e;
+          n = '5e' + e;
         } else {
           n = s.toExponential();
           n = n.slice(0, n.indexOf('e') + 1) + e;
@@ -24928,7 +26297,9 @@ class OAuth2Client extends authclient_1.AuthClient {
             opts.scope = opts.scope.join(' ');
         }
         const rootUrl = OAuth2Client.GOOGLE_OAUTH2_AUTH_BASE_URL_;
-        return rootUrl + '?' + querystring.stringify(opts);
+        return (rootUrl +
+            '?' +
+            querystring.stringify(opts));
     }
     generateCodeVerifier() {
         // To make the code compatible with browser SubtleCrypto we need to make
@@ -24936,12 +26307,12 @@ class OAuth2Client extends authclient_1.AuthClient {
         throw new Error('generateCodeVerifier is removed, please use generateCodeVerifierAsync instead.');
     }
     /**
-     * Convenience method to automatically generate a code_verifier, and it's
+     * Convenience method to automatically generate a code_verifier, and its
      * resulting SHA256. If used, this must be paired with a S256
      * code_challenge_method.
      *
      * For a full example see:
-     * https://github.com/googleapis/google-auth-library-nodejs/blob/master/samples/oauth2-codeVerifier.js
+     * https://github.com/googleapis/google-auth-library-nodejs/blob/main/samples/oauth2-codeVerifier.js
      */
     async generateCodeVerifierAsync() {
         // base64 encoding uses 6 bits per character, and we want to generate128
@@ -25075,7 +26446,16 @@ class OAuth2Client extends authclient_1.AuthClient {
         const shouldRefresh = !this.credentials.access_token || this.isTokenExpiring();
         if (shouldRefresh) {
             if (!this.credentials.refresh_token) {
-                throw new Error('No refresh token is set.');
+                if (this.refreshHandler) {
+                    const refreshedAccessToken = await this.processAndValidateRefreshHandler();
+                    if (refreshedAccessToken === null || refreshedAccessToken === void 0 ? void 0 : refreshedAccessToken.access_token) {
+                        this.setCredentials(refreshedAccessToken);
+                        return { token: this.credentials.access_token };
+                    }
+                }
+                else {
+                    throw new Error('No refresh token or refresh handler callback is set.');
+                }
             }
             const r = await this.refreshAccessTokenAsync();
             if (!r.credentials || (r.credentials && !r.credentials.access_token)) {
@@ -25104,15 +26484,29 @@ class OAuth2Client extends authclient_1.AuthClient {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     url) {
         const thisCreds = this.credentials;
-        if (!thisCreds.access_token && !thisCreds.refresh_token && !this.apiKey) {
-            throw new Error('No access, refresh token or API key is set.');
+        if (!thisCreds.access_token &&
+            !thisCreds.refresh_token &&
+            !this.apiKey &&
+            !this.refreshHandler) {
+            throw new Error('No access, refresh token, API key or refresh handler callback is set.');
         }
         if (thisCreds.access_token && !this.isTokenExpiring()) {
             thisCreds.token_type = thisCreds.token_type || 'Bearer';
             const headers = {
                 Authorization: thisCreds.token_type + ' ' + thisCreds.access_token,
             };
-            return { headers };
+            return { headers: this.addSharedMetadataHeaders(headers) };
+        }
+        // If refreshHandler exists, call processAndValidateRefreshHandler().
+        if (this.refreshHandler) {
+            const refreshedAccessToken = await this.processAndValidateRefreshHandler();
+            if (refreshedAccessToken === null || refreshedAccessToken === void 0 ? void 0 : refreshedAccessToken.access_token) {
+                this.setCredentials(refreshedAccessToken);
+                const headers = {
+                    Authorization: 'Bearer ' + this.credentials.access_token,
+                };
+                return { headers: this.addSharedMetadataHeaders(headers) };
+            }
         }
         if (this.apiKey) {
             return { headers: { 'X-Goog-Api-Key': this.apiKey } };
@@ -25221,14 +26615,39 @@ class OAuth2Client extends authclient_1.AuthClient {
                 //   fails on the first try because it's expired. Some developers may
                 //   choose to enable forceRefreshOnFailure to mitigate time-related
                 //   errors.
+                // Or the following criteria are true:
+                // - We haven't already retried.  It only makes sense to retry once.
+                // - The response was a 401 or a 403
+                // - The request didn't send a readableStream
+                // - No refresh_token was available
+                // - An access_token and a refreshHandler callback were available, but
+                //   either no expiry_date was available or the forceRefreshOnFailure
+                //   flag is set. The access_token fails on the first try because it's
+                //   expired. Some developers may choose to enable forceRefreshOnFailure
+                //   to mitigate time-related errors.
                 const mayRequireRefresh = this.credentials &&
                     this.credentials.access_token &&
                     this.credentials.refresh_token &&
                     (!this.credentials.expiry_date || this.forceRefreshOnFailure);
+                const mayRequireRefreshWithNoRefreshToken = this.credentials &&
+                    this.credentials.access_token &&
+                    !this.credentials.refresh_token &&
+                    (!this.credentials.expiry_date || this.forceRefreshOnFailure) &&
+                    this.refreshHandler;
                 const isReadableStream = res.config.data instanceof stream.Readable;
                 const isAuthErr = statusCode === 401 || statusCode === 403;
                 if (!retry && isAuthErr && !isReadableStream && mayRequireRefresh) {
                     await this.refreshAccessTokenAsync();
+                    return this.requestAsync(opts, true);
+                }
+                else if (!retry &&
+                    isAuthErr &&
+                    !isReadableStream &&
+                    mayRequireRefreshWithNoRefreshToken) {
+                    const refreshedAccessToken = await this.processAndValidateRefreshHandler();
+                    if (refreshedAccessToken === null || refreshedAccessToken === void 0 ? void 0 : refreshedAccessToken.access_token) {
+                        this.setCredentials(refreshedAccessToken);
+                    }
                     return this.requestAsync(opts, true);
                 }
             }
@@ -25267,9 +26686,12 @@ class OAuth2Client extends authclient_1.AuthClient {
      */
     async getTokenInfo(accessToken) {
         const { data } = await this.transporter.request({
-            method: 'GET',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                Authorization: `Bearer ${accessToken}`,
+            },
             url: OAuth2Client.GOOGLE_TOKEN_INFO_URL,
-            params: { access_token: accessToken },
         });
         const info = Object.assign({
             expiry_date: new Date().getTime() + data.expires_in * 1000,
@@ -25483,6 +26905,21 @@ class OAuth2Client extends authclient_1.AuthClient {
             }
         }
         return new loginticket_1.LoginTicket(envelope, payload);
+    }
+    /**
+     * Returns a promise that resolves with AccessTokenResponse type if
+     * refreshHandler is defined.
+     * If not, nothing is returned.
+     */
+    async processAndValidateRefreshHandler() {
+        if (this.refreshHandler) {
+            const accessTokenResponse = await this.refreshHandler();
+            if (!accessTokenResponse.access_token) {
+                throw new Error('No access token is returned by the refreshHandler callback.');
+            }
+            return accessTokenResponse;
+        }
+        return;
     }
     /**
      * Returns true if a token is expired or will expire within
@@ -27254,7 +28691,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getState = exports.saveState = exports.group = exports.endGroup = exports.startGroup = exports.info = exports.warning = exports.error = exports.debug = exports.isDebug = exports.setFailed = exports.setCommandEcho = exports.setOutput = exports.getBooleanInput = exports.getMultilineInput = exports.getInput = exports.addPath = exports.setSecret = exports.exportVariable = exports.ExitCode = void 0;
+exports.getState = exports.saveState = exports.group = exports.endGroup = exports.startGroup = exports.info = exports.notice = exports.warning = exports.error = exports.debug = exports.isDebug = exports.setFailed = exports.setCommandEcho = exports.setOutput = exports.getBooleanInput = exports.getMultilineInput = exports.getInput = exports.addPath = exports.setSecret = exports.exportVariable = exports.ExitCode = void 0;
 const command_1 = __webpack_require__(431);
 const file_command_1 = __webpack_require__(102);
 const utils_1 = __webpack_require__(82);
@@ -27432,19 +28869,30 @@ exports.debug = debug;
 /**
  * Adds an error issue
  * @param message error issue message. Errors will be converted to string via toString()
+ * @param properties optional properties to add to the annotation.
  */
-function error(message) {
-    command_1.issue('error', message instanceof Error ? message.toString() : message);
+function error(message, properties = {}) {
+    command_1.issueCommand('error', utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
 }
 exports.error = error;
 /**
- * Adds an warning issue
+ * Adds a warning issue
  * @param message warning issue message. Errors will be converted to string via toString()
+ * @param properties optional properties to add to the annotation.
  */
-function warning(message) {
-    command_1.issue('warning', message instanceof Error ? message.toString() : message);
+function warning(message, properties = {}) {
+    command_1.issueCommand('warning', utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
 }
 exports.warning = warning;
+/**
+ * Adds a notice issue
+ * @param message notice issue message. Errors will be converted to string via toString()
+ * @param properties optional properties to add to the annotation.
+ */
+function notice(message, properties = {}) {
+    command_1.issueCommand('notice', utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
+}
+exports.notice = notice;
 /**
  * Writes info to log with console.log.
  * @param message info message
@@ -27534,8 +28982,8 @@ exports.getState = getState;
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.requestTimeout = exports.resetIsAvailableCache = exports.isAvailable = exports.project = exports.instance = exports.HEADERS = exports.HEADER_VALUE = exports.HEADER_NAME = exports.SECONDARY_HOST_ADDRESS = exports.HOST_ADDRESS = exports.BASE_PATH = void 0;
-const gaxios_1 = __webpack_require__(597);
-const jsonBigint = __webpack_require__(738); // eslint-disable-line
+const gaxios_1 = __webpack_require__(507);
+const jsonBigint = __webpack_require__(738);
 exports.BASE_PATH = '/computeMetadata/v1';
 exports.HOST_ADDRESS = 'http://169.254.169.254';
 exports.SECONDARY_HOST_ADDRESS = 'http://metadata.google.internal.';
@@ -27543,16 +28991,17 @@ exports.HEADER_NAME = 'Metadata-Flavor';
 exports.HEADER_VALUE = 'Google';
 exports.HEADERS = Object.freeze({ [exports.HEADER_NAME]: exports.HEADER_VALUE });
 /**
- * Returns the base URL while taking into account the GCE_METADATA_IP
+ * Returns the base URL while taking into account the GCE_METADATA_HOST
  * environment variable if it exists.
  *
  * @returns The base URL, e.g., http://169.254.169.254/computeMetadata/v1.
  */
 function getBaseUrl(baseUrl) {
     if (!baseUrl) {
-        baseUrl = process.env.GCE_METADATA_IP
-            ? process.env.GCE_METADATA_IP
-            : exports.HOST_ADDRESS;
+        baseUrl =
+            process.env.GCE_METADATA_IP ||
+                process.env.GCE_METADATA_HOST ||
+                exports.HOST_ADDRESS;
     }
     // If no scheme is provided default to HTTP:
     if (!/^https?:\/\//.test(baseUrl)) {
@@ -27674,11 +29123,17 @@ async function fastFailMetadataRequest(options) {
     });
     return Promise.race([r1, r2]);
 }
+/**
+ * Obtain metadata for the current GCE instance
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function instance(options) {
     return metadataAccessor('instance', options);
 }
 exports.instance = instance;
+/**
+ * Obtain metadata for the current GCP Project.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function project(options) {
     return metadataAccessor('project', options);
@@ -27692,10 +29147,10 @@ function detectGCPAvailableRetries() {
         ? Number(process.env.DETECT_GCP_RETRIES)
         : 0;
 }
+let cachedIsAvailableResponse;
 /**
  * Determine if the metadata server is currently available.
  */
-let cachedIsAvailableResponse;
 async function isAvailable() {
     try {
         // If a user is instantiating several GCP libraries at the same time,
@@ -27707,7 +29162,7 @@ async function isAvailable() {
             // If the default HOST_ADDRESS has been overridden, we should not
             // make an effort to try SECONDARY_HOST_ADDRESS (as we are likely in
             // a non-GCP environment):
-            process.env.GCE_METADATA_IP ? false : true);
+            !(process.env.GCE_METADATA_IP || process.env.GCE_METADATA_HOST));
         }
         await cachedIsAvailableResponse;
         return true;
@@ -27755,6 +29210,9 @@ function resetIsAvailableCache() {
     cachedIsAvailableResponse = undefined;
 }
 exports.resetIsAvailableCache = resetIsAvailableCache;
+/**
+ * Obtain the timeout for requests to the metadata server.
+ */
 function requestTimeout() {
     // In testing, we were able to reproduce behavior similar to
     // https://github.com/googleapis/google-auth-library-nodejs/issues/798
@@ -27788,7 +29246,7 @@ exports.requestTimeout = requestTimeout;
  */
 var forge = __webpack_require__(763);
 __webpack_require__(837);
-__webpack_require__(849);
+__webpack_require__(530);
 __webpack_require__(795);
 __webpack_require__(166);
 __webpack_require__(219);
@@ -28079,7 +29537,10 @@ class JWT extends oauth2client_1.OAuth2Client {
      * @param url the URI being authorized.
      */
     async getRequestMetadataAsync(url) {
-        if (!this.apiKey && !this.hasScopes() && url) {
+        url = this.defaultServicePath ? `https://${this.defaultServicePath}/` : url;
+        const useSelfSignedJWT = (!this.hasUserScopes() && url) ||
+            (this.useJWTAccessWithScope && this.hasAnyScopes());
+        if (!this.apiKey && useSelfSignedJWT) {
             if (this.additionalClaims &&
                 this.additionalClaims.target_audience) {
                 const { tokens } = await this.refreshToken();
@@ -28093,14 +29554,29 @@ class JWT extends oauth2client_1.OAuth2Client {
                 // no scopes have been set, but a uri has been provided. Use JWTAccess
                 // credentials.
                 if (!this.access) {
-                    this.access = new jwtaccess_1.JWTAccess(this.email, this.key, this.keyId);
+                    this.access = new jwtaccess_1.JWTAccess(this.email, this.key, this.keyId, this.eagerRefreshThresholdMillis);
                 }
-                const headers = await this.access.getRequestHeaders(url, this.additionalClaims);
+                let scopes;
+                if (this.hasUserScopes()) {
+                    scopes = this.scopes;
+                }
+                else if (!url) {
+                    scopes = this.defaultScopes;
+                }
+                const headers = await this.access.getRequestHeaders(url !== null && url !== void 0 ? url : undefined, this.additionalClaims, 
+                // Scopes take precedent over audience for signing,
+                // so we only provide them if useJWTAccessWithScope is on
+                this.useJWTAccessWithScope ? scopes : undefined);
                 return { headers: this.addSharedMetadataHeaders(headers) };
             }
         }
-        else {
+        else if (this.hasAnyScopes() || this.apiKey) {
             return super.getRequestMetadataAsync(url);
+        }
+        else {
+            // If no audience, apiKey, or scopes are provided, we should not attempt
+            // to populate any headers:
+            return { headers: {} };
         }
     }
     /**
@@ -28112,7 +29588,7 @@ class JWT extends oauth2client_1.OAuth2Client {
         const gtoken = new gtoken_1.GoogleToken({
             iss: this.email,
             sub: this.subject,
-            scope: this.scopes,
+            scope: this.scopes || this.defaultScopes,
             keyFile: this.keyFile,
             key: this.key,
             additionalClaims: { target_audience: targetAudience },
@@ -28128,16 +29604,21 @@ class JWT extends oauth2client_1.OAuth2Client {
     /**
      * Determine if there are currently scopes available.
      */
-    hasScopes() {
+    hasUserScopes() {
         if (!this.scopes) {
             return false;
         }
-        // For arrays, check the array length.
-        if (this.scopes instanceof Array) {
-            return this.scopes.length > 0;
-        }
-        // For others, convert to a string and check the length.
-        return String(this.scopes).length > 0;
+        return this.scopes.length > 0;
+    }
+    /**
+     * Are there any default or user scopes defined.
+     */
+    hasAnyScopes() {
+        if (this.scopes && this.scopes.length > 0)
+            return true;
+        if (this.defaultScopes && this.defaultScopes.length > 0)
+            return true;
+        return false;
     }
     authorize(callback) {
         if (callback) {
@@ -28187,7 +29668,7 @@ class JWT extends oauth2client_1.OAuth2Client {
             this.gtoken = new gtoken_1.GoogleToken({
                 iss: this.email,
                 sub: this.subject,
-                scope: this.scopes,
+                scope: this.scopes || this.defaultScopes,
                 keyFile: this.keyFile,
                 key: this.key,
                 additionalClaims: this.additionalClaims,
@@ -28294,15 +29775,11 @@ function setup(env) {
 	createDebug.enable = enable;
 	createDebug.enabled = enabled;
 	createDebug.humanize = __webpack_require__(317);
+	createDebug.destroy = destroy;
 
 	Object.keys(env).forEach(key => {
 		createDebug[key] = env[key];
 	});
-
-	/**
-	* Active `debug` instances.
-	*/
-	createDebug.instances = [];
 
 	/**
 	* The currently active debug mode names, and names to skip.
@@ -28345,6 +29822,9 @@ function setup(env) {
 	*/
 	function createDebug(namespace) {
 		let prevTime;
+		let enableOverride = null;
+		let namespacesCache;
+		let enabledCache;
 
 		function debug(...args) {
 			// Disabled?
@@ -28374,7 +29854,7 @@ function setup(env) {
 			args[0] = args[0].replace(/%([a-zA-Z%])/g, (match, format) => {
 				// If we encounter an escaped % then don't increase the array index
 				if (match === '%%') {
-					return match;
+					return '%';
 				}
 				index++;
 				const formatter = createDebug.formatters[format];
@@ -28397,31 +29877,36 @@ function setup(env) {
 		}
 
 		debug.namespace = namespace;
-		debug.enabled = createDebug.enabled(namespace);
 		debug.useColors = createDebug.useColors();
-		debug.color = selectColor(namespace);
-		debug.destroy = destroy;
+		debug.color = createDebug.selectColor(namespace);
 		debug.extend = extend;
-		// Debug.formatArgs = formatArgs;
-		// debug.rawLog = rawLog;
+		debug.destroy = createDebug.destroy; // XXX Temporary. Will be removed in the next major release.
 
-		// env-specific initialization logic for debug instances
+		Object.defineProperty(debug, 'enabled', {
+			enumerable: true,
+			configurable: false,
+			get: () => {
+				if (enableOverride !== null) {
+					return enableOverride;
+				}
+				if (namespacesCache !== createDebug.namespaces) {
+					namespacesCache = createDebug.namespaces;
+					enabledCache = createDebug.enabled(namespace);
+				}
+
+				return enabledCache;
+			},
+			set: v => {
+				enableOverride = v;
+			}
+		});
+
+		// Env-specific initialization logic for debug instances
 		if (typeof createDebug.init === 'function') {
 			createDebug.init(debug);
 		}
 
-		createDebug.instances.push(debug);
-
 		return debug;
-	}
-
-	function destroy() {
-		const index = createDebug.instances.indexOf(this);
-		if (index !== -1) {
-			createDebug.instances.splice(index, 1);
-			return true;
-		}
-		return false;
 	}
 
 	function extend(namespace, delimiter) {
@@ -28439,6 +29924,7 @@ function setup(env) {
 	*/
 	function enable(namespaces) {
 		createDebug.save(namespaces);
+		createDebug.namespaces = namespaces;
 
 		createDebug.names = [];
 		createDebug.skips = [];
@@ -28460,11 +29946,6 @@ function setup(env) {
 			} else {
 				createDebug.names.push(new RegExp('^' + namespaces + '$'));
 			}
-		}
-
-		for (i = 0; i < createDebug.instances.length; i++) {
-			const instance = createDebug.instances[i];
-			instance.enabled = createDebug.enabled(instance.namespace);
 		}
 	}
 
@@ -28538,6 +30019,14 @@ function setup(env) {
 			return val.stack || val.message;
 		}
 		return val;
+	}
+
+	/**
+	* XXX DO NOT USE. This is a temporary stub function.
+	* XXX It WILL be removed in the next major release.
+	*/
+	function destroy() {
+		console.warn('Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.');
 	}
 
 	createDebug.enable(createDebug.load());
@@ -28997,6 +30486,46 @@ exports.default = _default;
 
 /***/ }),
 
+/***/ 507:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2018 Google LLC
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.request = exports.instance = exports.Gaxios = void 0;
+const gaxios_1 = __webpack_require__(966);
+Object.defineProperty(exports, "Gaxios", { enumerable: true, get: function () { return gaxios_1.Gaxios; } });
+var common_1 = __webpack_require__(34);
+Object.defineProperty(exports, "GaxiosError", { enumerable: true, get: function () { return common_1.GaxiosError; } });
+/**
+ * The default instance used when the `request` method is directly
+ * invoked.
+ */
+exports.instance = new gaxios_1.Gaxios();
+/**
+ * Make an HTTP request using the given options.
+ * @param opts Options for the request
+ */
+async function request(opts) {
+    return exports.instance.request(opts);
+}
+exports.request = request;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
 /***/ 508:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -29169,6 +30698,223 @@ function _createKDF(kdf, md, counterStart, digestLength) {
   };
 }
 
+
+/***/ }),
+
+/***/ 509:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AwsRequestSigner = void 0;
+const crypto_1 = __webpack_require__(984);
+/** AWS Signature Version 4 signing algorithm identifier.  */
+const AWS_ALGORITHM = 'AWS4-HMAC-SHA256';
+/**
+ * The termination string for the AWS credential scope value as defined in
+ * https://docs.aws.amazon.com/general/latest/gr/sigv4-create-string-to-sign.html
+ */
+const AWS_REQUEST_TYPE = 'aws4_request';
+/**
+ * Implements an AWS API request signer based on the AWS Signature Version 4
+ * signing process.
+ * https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html
+ */
+class AwsRequestSigner {
+    /**
+     * Instantiates an AWS API request signer used to send authenticated signed
+     * requests to AWS APIs based on the AWS Signature Version 4 signing process.
+     * This also provides a mechanism to generate the signed request without
+     * sending it.
+     * @param getCredentials A mechanism to retrieve AWS security credentials
+     *   when needed.
+     * @param region The AWS region to use.
+     */
+    constructor(getCredentials, region) {
+        this.getCredentials = getCredentials;
+        this.region = region;
+        this.crypto = crypto_1.createCrypto();
+    }
+    /**
+     * Generates the signed request for the provided HTTP request for calling
+     * an AWS API. This follows the steps described at:
+     * https://docs.aws.amazon.com/general/latest/gr/sigv4_signing.html
+     * @param amzOptions The AWS request options that need to be signed.
+     * @return A promise that resolves with the GaxiosOptions containing the
+     *   signed HTTP request parameters.
+     */
+    async getRequestOptions(amzOptions) {
+        if (!amzOptions.url) {
+            throw new Error('"url" is required in "amzOptions"');
+        }
+        // Stringify JSON requests. This will be set in the request body of the
+        // generated signed request.
+        const requestPayloadData = typeof amzOptions.data === 'object'
+            ? JSON.stringify(amzOptions.data)
+            : amzOptions.data;
+        const url = amzOptions.url;
+        const method = amzOptions.method || 'GET';
+        const requestPayload = amzOptions.body || requestPayloadData;
+        const additionalAmzHeaders = amzOptions.headers;
+        const awsSecurityCredentials = await this.getCredentials();
+        const uri = new URL(url);
+        const headerMap = await generateAuthenticationHeaderMap({
+            crypto: this.crypto,
+            host: uri.host,
+            canonicalUri: uri.pathname,
+            canonicalQuerystring: uri.search.substr(1),
+            method,
+            region: this.region,
+            securityCredentials: awsSecurityCredentials,
+            requestPayload,
+            additionalAmzHeaders,
+        });
+        // Append additional optional headers, eg. X-Amz-Target, Content-Type, etc.
+        const headers = Object.assign(
+        // Add x-amz-date if available.
+        headerMap.amzDate ? { 'x-amz-date': headerMap.amzDate } : {}, {
+            Authorization: headerMap.authorizationHeader,
+            host: uri.host,
+        }, additionalAmzHeaders || {});
+        if (awsSecurityCredentials.token) {
+            Object.assign(headers, {
+                'x-amz-security-token': awsSecurityCredentials.token,
+            });
+        }
+        const awsSignedReq = {
+            url,
+            method: method,
+            headers,
+        };
+        if (typeof requestPayload !== 'undefined') {
+            awsSignedReq.body = requestPayload;
+        }
+        return awsSignedReq;
+    }
+}
+exports.AwsRequestSigner = AwsRequestSigner;
+/**
+ * Creates the HMAC-SHA256 hash of the provided message using the
+ * provided key.
+ *
+ * @param crypto The crypto instance used to facilitate cryptographic
+ *   operations.
+ * @param key The HMAC-SHA256 key to use.
+ * @param msg The message to hash.
+ * @return The computed hash bytes.
+ */
+async function sign(crypto, key, msg) {
+    return await crypto.signWithHmacSha256(key, msg);
+}
+/**
+ * Calculates the signing key used to calculate the signature for
+ * AWS Signature Version 4 based on:
+ * https://docs.aws.amazon.com/general/latest/gr/sigv4-calculate-signature.html
+ *
+ * @param crypto The crypto instance used to facilitate cryptographic
+ *   operations.
+ * @param key The AWS secret access key.
+ * @param dateStamp The '%Y%m%d' date format.
+ * @param region The AWS region.
+ * @param serviceName The AWS service name, eg. sts.
+ * @return The signing key bytes.
+ */
+async function getSigningKey(crypto, key, dateStamp, region, serviceName) {
+    const kDate = await sign(crypto, `AWS4${key}`, dateStamp);
+    const kRegion = await sign(crypto, kDate, region);
+    const kService = await sign(crypto, kRegion, serviceName);
+    const kSigning = await sign(crypto, kService, 'aws4_request');
+    return kSigning;
+}
+/**
+ * Generates the authentication header map needed for generating the AWS
+ * Signature Version 4 signed request.
+ *
+ * @param option The options needed to compute the authentication header map.
+ * @return The AWS authentication header map which constitutes of the following
+ *   components: amz-date, authorization header and canonical query string.
+ */
+async function generateAuthenticationHeaderMap(options) {
+    const additionalAmzHeaders = options.additionalAmzHeaders || {};
+    const requestPayload = options.requestPayload || '';
+    // iam.amazonaws.com host => iam service.
+    // sts.us-east-2.amazonaws.com => sts service.
+    const serviceName = options.host.split('.')[0];
+    const now = new Date();
+    // Format: '%Y%m%dT%H%M%SZ'.
+    const amzDate = now
+        .toISOString()
+        .replace(/[-:]/g, '')
+        .replace(/\.[0-9]+/, '');
+    // Format: '%Y%m%d'.
+    const dateStamp = now.toISOString().replace(/[-]/g, '').replace(/T.*/, '');
+    // Change all additional headers to be lower case.
+    const reformattedAdditionalAmzHeaders = {};
+    Object.keys(additionalAmzHeaders).forEach(key => {
+        reformattedAdditionalAmzHeaders[key.toLowerCase()] =
+            additionalAmzHeaders[key];
+    });
+    // Add AWS token if available.
+    if (options.securityCredentials.token) {
+        reformattedAdditionalAmzHeaders['x-amz-security-token'] =
+            options.securityCredentials.token;
+    }
+    // Header keys need to be sorted alphabetically.
+    const amzHeaders = Object.assign({
+        host: options.host,
+    }, 
+    // Previously the date was not fixed with x-amz- and could be provided manually.
+    // https://github.com/boto/botocore/blob/879f8440a4e9ace5d3cf145ce8b3d5e5ffb892ef/tests/unit/auth/aws4_testsuite/get-header-value-trim.req
+    reformattedAdditionalAmzHeaders.date ? {} : { 'x-amz-date': amzDate }, reformattedAdditionalAmzHeaders);
+    let canonicalHeaders = '';
+    const signedHeadersList = Object.keys(amzHeaders).sort();
+    signedHeadersList.forEach(key => {
+        canonicalHeaders += `${key}:${amzHeaders[key]}\n`;
+    });
+    const signedHeaders = signedHeadersList.join(';');
+    const payloadHash = await options.crypto.sha256DigestHex(requestPayload);
+    // https://docs.aws.amazon.com/general/latest/gr/sigv4-create-canonical-request.html
+    const canonicalRequest = `${options.method}\n` +
+        `${options.canonicalUri}\n` +
+        `${options.canonicalQuerystring}\n` +
+        `${canonicalHeaders}\n` +
+        `${signedHeaders}\n` +
+        `${payloadHash}`;
+    const credentialScope = `${dateStamp}/${options.region}/${serviceName}/${AWS_REQUEST_TYPE}`;
+    // https://docs.aws.amazon.com/general/latest/gr/sigv4-create-string-to-sign.html
+    const stringToSign = `${AWS_ALGORITHM}\n` +
+        `${amzDate}\n` +
+        `${credentialScope}\n` +
+        (await options.crypto.sha256DigestHex(canonicalRequest));
+    // https://docs.aws.amazon.com/general/latest/gr/sigv4-calculate-signature.html
+    const signingKey = await getSigningKey(options.crypto, options.securityCredentials.secretAccessKey, dateStamp, options.region, serviceName);
+    const signature = await sign(options.crypto, signingKey, stringToSign);
+    // https://docs.aws.amazon.com/general/latest/gr/sigv4-add-signature-to-request.html
+    const authorizationHeader = `${AWS_ALGORITHM} Credential=${options.securityCredentials.accessKeyId}/` +
+        `${credentialScope}, SignedHeaders=${signedHeaders}, ` +
+        `Signature=${crypto_1.fromArrayBufferToHex(signature)}`;
+    return {
+        // Do not return x-amz-date if date is available.
+        amzDate: reformattedAdditionalAmzHeaders.date ? undefined : amzDate,
+        authorizationHeader,
+        canonicalQuerystring: options.canonicalQuerystring,
+    };
+}
+//# sourceMappingURL=awsrequestsigner.js.map
 
 /***/ }),
 
@@ -30064,6 +31810,39 @@ module.exports = __webpack_require__(792).YAML
 
 /***/ }),
 
+/***/ 522:
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+// Copyright 2018 Google LLC
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.GaxiosError = void 0;
+/* eslint-disable @typescript-eslint/no-explicit-any */
+class GaxiosError extends Error {
+    constructor(message, options, response) {
+        super(message);
+        this.response = response;
+        this.config = options;
+        this.code = response.status.toString();
+    }
+}
+exports.GaxiosError = GaxiosError;
+//# sourceMappingURL=common.js.map
+
+/***/ }),
+
 /***/ 523:
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
@@ -30117,6 +31896,159 @@ function convertToPem(p12base64) {
     }
 }
 //# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 530:
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+/**
+ * Hash-based Message Authentication Code implementation. Requires a message
+ * digest object that can be obtained, for example, from forge.md.sha1 or
+ * forge.md.md5.
+ *
+ * @author Dave Longley
+ *
+ * Copyright (c) 2010-2012 Digital Bazaar, Inc. All rights reserved.
+ */
+var forge = __webpack_require__(763);
+__webpack_require__(532);
+__webpack_require__(219);
+
+/* HMAC API */
+var hmac = module.exports = forge.hmac = forge.hmac || {};
+
+/**
+ * Creates an HMAC object that uses the given message digest object.
+ *
+ * @return an HMAC object.
+ */
+hmac.create = function() {
+  // the hmac key to use
+  var _key = null;
+
+  // the message digest to use
+  var _md = null;
+
+  // the inner padding
+  var _ipadding = null;
+
+  // the outer padding
+  var _opadding = null;
+
+  // hmac context
+  var ctx = {};
+
+  /**
+   * Starts or restarts the HMAC with the given key and message digest.
+   *
+   * @param md the message digest to use, null to reuse the previous one,
+   *           a string to use builtin 'sha1', 'md5', 'sha256'.
+   * @param key the key to use as a string, array of bytes, byte buffer,
+   *           or null to reuse the previous key.
+   */
+  ctx.start = function(md, key) {
+    if(md !== null) {
+      if(typeof md === 'string') {
+        // create builtin message digest
+        md = md.toLowerCase();
+        if(md in forge.md.algorithms) {
+          _md = forge.md.algorithms[md].create();
+        } else {
+          throw new Error('Unknown hash algorithm "' + md + '"');
+        }
+      } else {
+        // store message digest
+        _md = md;
+      }
+    }
+
+    if(key === null) {
+      // reuse previous key
+      key = _key;
+    } else {
+      if(typeof key === 'string') {
+        // convert string into byte buffer
+        key = forge.util.createBuffer(key);
+      } else if(forge.util.isArray(key)) {
+        // convert byte array into byte buffer
+        var tmp = key;
+        key = forge.util.createBuffer();
+        for(var i = 0; i < tmp.length; ++i) {
+          key.putByte(tmp[i]);
+        }
+      }
+
+      // if key is longer than blocksize, hash it
+      var keylen = key.length();
+      if(keylen > _md.blockLength) {
+        _md.start();
+        _md.update(key.bytes());
+        key = _md.digest();
+      }
+
+      // mix key into inner and outer padding
+      // ipadding = [0x36 * blocksize] ^ key
+      // opadding = [0x5C * blocksize] ^ key
+      _ipadding = forge.util.createBuffer();
+      _opadding = forge.util.createBuffer();
+      keylen = key.length();
+      for(var i = 0; i < keylen; ++i) {
+        var tmp = key.at(i);
+        _ipadding.putByte(0x36 ^ tmp);
+        _opadding.putByte(0x5C ^ tmp);
+      }
+
+      // if key is shorter than blocksize, add additional padding
+      if(keylen < _md.blockLength) {
+        var tmp = _md.blockLength - keylen;
+        for(var i = 0; i < tmp; ++i) {
+          _ipadding.putByte(0x36);
+          _opadding.putByte(0x5C);
+        }
+      }
+      _key = key;
+      _ipadding = _ipadding.bytes();
+      _opadding = _opadding.bytes();
+    }
+
+    // digest is done like so: hash(opadding | hash(ipadding | message))
+
+    // prepare to do inner hash
+    // hash(ipadding | message)
+    _md.start();
+    _md.update(_ipadding);
+  };
+
+  /**
+   * Updates the HMAC with the given message bytes.
+   *
+   * @param bytes the bytes to update with.
+   */
+  ctx.update = function(bytes) {
+    _md.update(bytes);
+  };
+
+  /**
+   * Produces the Message Authentication Code (MAC).
+   *
+   * @return a byte buffer containing the digest value.
+   */
+  ctx.getMac = function() {
+    // digest is done like so: hash(opadding | hash(ipadding | message))
+    // here we do the outer hashing
+    var inner = _md.digest().bytes();
+    _md.start();
+    _md.update(_opadding);
+    _md.update(inner);
+    return _md.digest();
+  };
+  // alias for getMac
+  ctx.digest = ctx.getMac;
+
+  return ctx;
+};
+
 
 /***/ }),
 
@@ -30220,7 +32152,7 @@ function convertToPem(p12base64) {
  */
 var forge = __webpack_require__(763);
 __webpack_require__(183);
-__webpack_require__(849);
+__webpack_require__(530);
 __webpack_require__(981);
 __webpack_require__(186);
 __webpack_require__(242);
@@ -31241,6 +33173,216 @@ function promisify(fn) {
 }
 exports.default = promisify;
 //# sourceMappingURL=promisify.js.map
+
+/***/ }),
+
+/***/ 549:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AwsClient = void 0;
+const awsrequestsigner_1 = __webpack_require__(509);
+const baseexternalclient_1 = __webpack_require__(320);
+/**
+ * AWS external account client. This is used for AWS workloads, where
+ * AWS STS GetCallerIdentity serialized signed requests are exchanged for
+ * GCP access token.
+ */
+class AwsClient extends baseexternalclient_1.BaseExternalAccountClient {
+    /**
+     * Instantiates an AwsClient instance using the provided JSON
+     * object loaded from an external account credentials file.
+     * An error is thrown if the credential is not a valid AWS credential.
+     * @param options The external account options object typically loaded
+     *   from the external account JSON credential file.
+     * @param additionalOptions Optional additional behavior customization
+     *   options. These currently customize expiration threshold time and
+     *   whether to retry on 401/403 API request errors.
+     */
+    constructor(options, additionalOptions) {
+        var _a;
+        super(options, additionalOptions);
+        this.environmentId = options.credential_source.environment_id;
+        // This is only required if the AWS region is not available in the
+        // AWS_REGION or AWS_DEFAULT_REGION environment variables.
+        this.regionUrl = options.credential_source.region_url;
+        // This is only required if AWS security credentials are not available in
+        // environment variables.
+        this.securityCredentialsUrl = options.credential_source.url;
+        this.regionalCredVerificationUrl =
+            options.credential_source.regional_cred_verification_url;
+        const match = (_a = this.environmentId) === null || _a === void 0 ? void 0 : _a.match(/^(aws)(\d+)$/);
+        if (!match || !this.regionalCredVerificationUrl) {
+            throw new Error('No valid AWS "credential_source" provided');
+        }
+        else if (parseInt(match[2], 10) !== 1) {
+            throw new Error(`aws version "${match[2]}" is not supported in the current build.`);
+        }
+        this.awsRequestSigner = null;
+        this.region = '';
+    }
+    /**
+     * Triggered when an external subject token is needed to be exchanged for a
+     * GCP access token via GCP STS endpoint.
+     * This uses the `options.credential_source` object to figure out how
+     * to retrieve the token using the current environment. In this case,
+     * this uses a serialized AWS signed request to the STS GetCallerIdentity
+     * endpoint.
+     * The logic is summarized as:
+     * 1. Retrieve AWS region from availability-zone.
+     * 2a. Check AWS credentials in environment variables. If not found, get
+     *     from security-credentials endpoint.
+     * 2b. Get AWS credentials from security-credentials endpoint. In order
+     *     to retrieve this, the AWS role needs to be determined by calling
+     *     security-credentials endpoint without any argument. Then the
+     *     credentials can be retrieved via: security-credentials/role_name
+     * 3. Generate the signed request to AWS STS GetCallerIdentity action.
+     * 4. Inject x-goog-cloud-target-resource into header and serialize the
+     *    signed request. This will be the subject-token to pass to GCP STS.
+     * @return A promise that resolves with the external subject token.
+     */
+    async retrieveSubjectToken() {
+        // Initialize AWS request signer if not already initialized.
+        if (!this.awsRequestSigner) {
+            this.region = await this.getAwsRegion();
+            this.awsRequestSigner = new awsrequestsigner_1.AwsRequestSigner(async () => {
+                // Check environment variables for permanent credentials first.
+                // https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html
+                if (process.env['AWS_ACCESS_KEY_ID'] &&
+                    process.env['AWS_SECRET_ACCESS_KEY']) {
+                    return {
+                        accessKeyId: process.env['AWS_ACCESS_KEY_ID'],
+                        secretAccessKey: process.env['AWS_SECRET_ACCESS_KEY'],
+                        // This is normally not available for permanent credentials.
+                        token: process.env['AWS_SESSION_TOKEN'],
+                    };
+                }
+                // Since the role on a VM can change, we don't need to cache it.
+                const roleName = await this.getAwsRoleName();
+                // Temporary credentials typically last for several hours.
+                // Expiration is returned in response.
+                // Consider future optimization of this logic to cache AWS tokens
+                // until their natural expiration.
+                const awsCreds = await this.getAwsSecurityCredentials(roleName);
+                return {
+                    accessKeyId: awsCreds.AccessKeyId,
+                    secretAccessKey: awsCreds.SecretAccessKey,
+                    token: awsCreds.Token,
+                };
+            }, this.region);
+        }
+        // Generate signed request to AWS STS GetCallerIdentity API.
+        // Use the required regional endpoint. Otherwise, the request will fail.
+        const options = await this.awsRequestSigner.getRequestOptions({
+            url: this.regionalCredVerificationUrl.replace('{region}', this.region),
+            method: 'POST',
+        });
+        // The GCP STS endpoint expects the headers to be formatted as:
+        // [
+        //   {key: 'x-amz-date', value: '...'},
+        //   {key: 'Authorization', value: '...'},
+        //   ...
+        // ]
+        // And then serialized as:
+        // encodeURIComponent(JSON.stringify({
+        //   url: '...',
+        //   method: 'POST',
+        //   headers: [{key: 'x-amz-date', value: '...'}, ...]
+        // }))
+        const reformattedHeader = [];
+        const extendedHeaders = Object.assign({
+            // The full, canonical resource name of the workload identity pool
+            // provider, with or without the HTTPS prefix.
+            // Including this header as part of the signature is recommended to
+            // ensure data integrity.
+            'x-goog-cloud-target-resource': this.audience,
+        }, options.headers);
+        // Reformat header to GCP STS expected format.
+        for (const key in extendedHeaders) {
+            reformattedHeader.push({
+                key,
+                value: extendedHeaders[key],
+            });
+        }
+        // Serialize the reformatted signed request.
+        return encodeURIComponent(JSON.stringify({
+            url: options.url,
+            method: options.method,
+            headers: reformattedHeader,
+        }));
+    }
+    /**
+     * @return A promise that resolves with the current AWS region.
+     */
+    async getAwsRegion() {
+        // Priority order for region determination:
+        // AWS_REGION > AWS_DEFAULT_REGION > metadata server.
+        if (process.env['AWS_REGION'] || process.env['AWS_DEFAULT_REGION']) {
+            return (process.env['AWS_REGION'] || process.env['AWS_DEFAULT_REGION']);
+        }
+        if (!this.regionUrl) {
+            throw new Error('Unable to determine AWS region due to missing ' +
+                '"options.credential_source.region_url"');
+        }
+        const opts = {
+            url: this.regionUrl,
+            method: 'GET',
+            responseType: 'text',
+        };
+        const response = await this.transporter.request(opts);
+        // Remove last character. For example, if us-east-2b is returned,
+        // the region would be us-east-2.
+        return response.data.substr(0, response.data.length - 1);
+    }
+    /**
+     * @return A promise that resolves with the assigned role to the current
+     *   AWS VM. This is needed for calling the security-credentials endpoint.
+     */
+    async getAwsRoleName() {
+        if (!this.securityCredentialsUrl) {
+            throw new Error('Unable to determine AWS role name due to missing ' +
+                '"options.credential_source.url"');
+        }
+        const opts = {
+            url: this.securityCredentialsUrl,
+            method: 'GET',
+            responseType: 'text',
+        };
+        const response = await this.transporter.request(opts);
+        return response.data;
+    }
+    /**
+     * Retrieves the temporary AWS credentials by calling the security-credentials
+     * endpoint as specified in the `credential_source` object.
+     * @param roleName The role attached to the current VM.
+     * @return A promise that resolves with the temporary AWS credentials
+     *   needed for creating the GetCallerIdentity signed request.
+     */
+    async getAwsSecurityCredentials(roleName) {
+        const response = await this.transporter.request({
+            url: `${this.securityCredentialsUrl}/${roleName}`,
+            responseType: 'json',
+        });
+        return response.data;
+    }
+}
+exports.AwsClient = AwsClient;
+//# sourceMappingURL=awsclient.js.map
 
 /***/ }),
 
@@ -33272,7 +35414,7 @@ __webpack_require__(42);
 __webpack_require__(289);
 __webpack_require__(807);
 __webpack_require__(197);
-__webpack_require__(849);
+__webpack_require__(530);
 __webpack_require__(508);
 __webpack_require__(864);
 __webpack_require__(284);
@@ -33764,6 +35906,8 @@ class AuthClient extends events_1.EventEmitter {
         super(...arguments);
         this.transporter = new transporters_1.DefaultTransporter();
         this.credentials = {};
+        this.eagerRefreshThresholdMillis = 5 * 60 * 1000;
+        this.forceRefreshOnFailure = false;
     }
     /**
      * Sets the auth credentials.
@@ -38118,6 +40262,291 @@ module.exports = require("net");
 
 /***/ }),
 
+/***/ 640:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.DownscopedClient = exports.EXPIRATION_TIME_OFFSET = exports.MAX_ACCESS_BOUNDARY_RULES_COUNT = void 0;
+const stream = __webpack_require__(413);
+const authclient_1 = __webpack_require__(616);
+const sts = __webpack_require__(732);
+/**
+ * The required token exchange grant_type: rfc8693#section-2.1
+ */
+const STS_GRANT_TYPE = 'urn:ietf:params:oauth:grant-type:token-exchange';
+/**
+ * The requested token exchange requested_token_type: rfc8693#section-2.1
+ */
+const STS_REQUEST_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:access_token';
+/**
+ * The requested token exchange subject_token_type: rfc8693#section-2.1
+ */
+const STS_SUBJECT_TOKEN_TYPE = 'urn:ietf:params:oauth:token-type:access_token';
+/** The STS access token exchange end point. */
+const STS_ACCESS_TOKEN_URL = 'https://sts.googleapis.com/v1/token';
+/**
+ * The maximum number of access boundary rules a Credential Access Boundary
+ * can contain.
+ */
+exports.MAX_ACCESS_BOUNDARY_RULES_COUNT = 10;
+/**
+ * Offset to take into account network delays and server clock skews.
+ */
+exports.EXPIRATION_TIME_OFFSET = 5 * 60 * 1000;
+/**
+ * Defines a set of Google credentials that are downscoped from an existing set
+ * of Google OAuth2 credentials. This is useful to restrict the Identity and
+ * Access Management (IAM) permissions that a short-lived credential can use.
+ * The common pattern of usage is to have a token broker with elevated access
+ * generate these downscoped credentials from higher access source credentials
+ * and pass the downscoped short-lived access tokens to a token consumer via
+ * some secure authenticated channel for limited access to Google Cloud Storage
+ * resources.
+ */
+class DownscopedClient extends authclient_1.AuthClient {
+    /**
+     * Instantiates a downscoped client object using the provided source
+     * AuthClient and credential access boundary rules.
+     * To downscope permissions of a source AuthClient, a Credential Access
+     * Boundary that specifies which resources the new credential can access, as
+     * well as an upper bound on the permissions that are available on each
+     * resource, has to be defined. A downscoped client can then be instantiated
+     * using the source AuthClient and the Credential Access Boundary.
+     * @param authClient The source AuthClient to be downscoped based on the
+     *   provided Credential Access Boundary rules.
+     * @param credentialAccessBoundary The Credential Access Boundary which
+     *   contains a list of access boundary rules. Each rule contains information
+     *   on the resource that the rule applies to, the upper bound of the
+     *   permissions that are available on that resource and an optional
+     *   condition to further restrict permissions.
+     * @param additionalOptions Optional additional behavior customization
+     *   options. These currently customize expiration threshold time and
+     *   whether to retry on 401/403 API request errors.
+     * @param quotaProjectId Optional quota project id for setting up in the
+     *   x-goog-user-project header.
+     */
+    constructor(authClient, credentialAccessBoundary, additionalOptions, quotaProjectId) {
+        super();
+        this.authClient = authClient;
+        this.credentialAccessBoundary = credentialAccessBoundary;
+        // Check 1-10 Access Boundary Rules are defined within Credential Access
+        // Boundary.
+        if (credentialAccessBoundary.accessBoundary.accessBoundaryRules.length === 0) {
+            throw new Error('At least one access boundary rule needs to be defined.');
+        }
+        else if (credentialAccessBoundary.accessBoundary.accessBoundaryRules.length >
+            exports.MAX_ACCESS_BOUNDARY_RULES_COUNT) {
+            throw new Error('The provided access boundary has more than ' +
+                `${exports.MAX_ACCESS_BOUNDARY_RULES_COUNT} access boundary rules.`);
+        }
+        // Check at least one permission should be defined in each Access Boundary
+        // Rule.
+        for (const rule of credentialAccessBoundary.accessBoundary
+            .accessBoundaryRules) {
+            if (rule.availablePermissions.length === 0) {
+                throw new Error('At least one permission should be defined in access boundary rules.');
+            }
+        }
+        this.stsCredential = new sts.StsCredentials(STS_ACCESS_TOKEN_URL);
+        this.cachedDownscopedAccessToken = null;
+        // As threshold could be zero,
+        // eagerRefreshThresholdMillis || EXPIRATION_TIME_OFFSET will override the
+        // zero value.
+        if (typeof (additionalOptions === null || additionalOptions === void 0 ? void 0 : additionalOptions.eagerRefreshThresholdMillis) !== 'number') {
+            this.eagerRefreshThresholdMillis = exports.EXPIRATION_TIME_OFFSET;
+        }
+        else {
+            this.eagerRefreshThresholdMillis = additionalOptions
+                .eagerRefreshThresholdMillis;
+        }
+        this.forceRefreshOnFailure = !!(additionalOptions === null || additionalOptions === void 0 ? void 0 : additionalOptions.forceRefreshOnFailure);
+        this.quotaProjectId = quotaProjectId;
+    }
+    /**
+     * Provides a mechanism to inject Downscoped access tokens directly.
+     * The expiry_date field is required to facilitate determination of the token
+     * expiration which would make it easier for the token consumer to handle.
+     * @param credentials The Credentials object to set on the current client.
+     */
+    setCredentials(credentials) {
+        if (!credentials.expiry_date) {
+            throw new Error('The access token expiry_date field is missing in the provided ' +
+                'credentials.');
+        }
+        super.setCredentials(credentials);
+        this.cachedDownscopedAccessToken = credentials;
+    }
+    async getAccessToken() {
+        // If the cached access token is unavailable or expired, force refresh.
+        // The Downscoped access token will be returned in
+        // DownscopedAccessTokenResponse format.
+        if (!this.cachedDownscopedAccessToken ||
+            this.isExpired(this.cachedDownscopedAccessToken)) {
+            await this.refreshAccessTokenAsync();
+        }
+        // Return Downscoped access token in DownscopedAccessTokenResponse format.
+        return {
+            token: this.cachedDownscopedAccessToken.access_token,
+            expirationTime: this.cachedDownscopedAccessToken.expiry_date,
+            res: this.cachedDownscopedAccessToken.res,
+        };
+    }
+    /**
+     * The main authentication interface. It takes an optional url which when
+     * present is the endpoint being accessed, and returns a Promise which
+     * resolves with authorization header fields.
+     *
+     * The result has the form:
+     * { Authorization: 'Bearer <access_token_value>' }
+     */
+    async getRequestHeaders() {
+        const accessTokenResponse = await this.getAccessToken();
+        const headers = {
+            Authorization: `Bearer ${accessTokenResponse.token}`,
+        };
+        return this.addSharedMetadataHeaders(headers);
+    }
+    request(opts, callback) {
+        if (callback) {
+            this.requestAsync(opts).then(r => callback(null, r), e => {
+                return callback(e, e.response);
+            });
+        }
+        else {
+            return this.requestAsync(opts);
+        }
+    }
+    /**
+     * Authenticates the provided HTTP request, processes it and resolves with the
+     * returned response.
+     * @param opts The HTTP request options.
+     * @param retry Whether the current attempt is a retry after a failed attempt.
+     * @return A promise that resolves with the successful response.
+     */
+    async requestAsync(opts, retry = false) {
+        let response;
+        try {
+            const requestHeaders = await this.getRequestHeaders();
+            opts.headers = opts.headers || {};
+            if (requestHeaders && requestHeaders['x-goog-user-project']) {
+                opts.headers['x-goog-user-project'] =
+                    requestHeaders['x-goog-user-project'];
+            }
+            if (requestHeaders && requestHeaders.Authorization) {
+                opts.headers.Authorization = requestHeaders.Authorization;
+            }
+            response = await this.transporter.request(opts);
+        }
+        catch (e) {
+            const res = e.response;
+            if (res) {
+                const statusCode = res.status;
+                // Retry the request for metadata if the following criteria are true:
+                // - We haven't already retried.  It only makes sense to retry once.
+                // - The response was a 401 or a 403
+                // - The request didn't send a readableStream
+                // - forceRefreshOnFailure is true
+                const isReadableStream = res.config.data instanceof stream.Readable;
+                const isAuthErr = statusCode === 401 || statusCode === 403;
+                if (!retry &&
+                    isAuthErr &&
+                    !isReadableStream &&
+                    this.forceRefreshOnFailure) {
+                    await this.refreshAccessTokenAsync();
+                    return await this.requestAsync(opts, true);
+                }
+            }
+            throw e;
+        }
+        return response;
+    }
+    /**
+     * Forces token refresh, even if unexpired tokens are currently cached.
+     * GCP access tokens are retrieved from authclient object/source credential.
+     * Then GCP access tokens are exchanged for downscoped access tokens via the
+     * token exchange endpoint.
+     * @return A promise that resolves with the fresh downscoped access token.
+     */
+    async refreshAccessTokenAsync() {
+        var _a;
+        // Retrieve GCP access token from source credential.
+        const subjectToken = (await this.authClient.getAccessToken()).token;
+        // Construct the STS credentials options.
+        const stsCredentialsOptions = {
+            grantType: STS_GRANT_TYPE,
+            requestedTokenType: STS_REQUEST_TOKEN_TYPE,
+            subjectToken: subjectToken,
+            subjectTokenType: STS_SUBJECT_TOKEN_TYPE,
+        };
+        // Exchange the source AuthClient access token for a Downscoped access
+        // token.
+        const stsResponse = await this.stsCredential.exchangeToken(stsCredentialsOptions, undefined, this.credentialAccessBoundary);
+        /**
+         * The STS endpoint will only return the expiration time for the downscoped
+         * access token if the original access token represents a service account.
+         * The downscoped token's expiration time will always match the source
+         * credential expiration. When no expires_in is returned, we can copy the
+         * source credential's expiration time.
+         */
+        const sourceCredExpireDate = ((_a = this.authClient.credentials) === null || _a === void 0 ? void 0 : _a.expiry_date) || null;
+        const expiryDate = stsResponse.expires_in
+            ? new Date().getTime() + stsResponse.expires_in * 1000
+            : sourceCredExpireDate;
+        // Save response in cached access token.
+        this.cachedDownscopedAccessToken = {
+            access_token: stsResponse.access_token,
+            expiry_date: expiryDate,
+            res: stsResponse.res,
+        };
+        // Save credentials.
+        this.credentials = {};
+        Object.assign(this.credentials, this.cachedDownscopedAccessToken);
+        delete this.credentials.res;
+        // Trigger tokens event to notify external listeners.
+        this.emit('tokens', {
+            refresh_token: null,
+            expiry_date: this.cachedDownscopedAccessToken.expiry_date,
+            access_token: this.cachedDownscopedAccessToken.access_token,
+            token_type: 'Bearer',
+            id_token: null,
+        });
+        // Return the cached access token.
+        return this.cachedDownscopedAccessToken;
+    }
+    /**
+     * Returns whether the provided credentials are expired or not.
+     * If there is no expiry time, assumes the token is not expired or expiring.
+     * @param downscopedAccessToken The credentials to check for expiration.
+     * @return Whether the credentials are expired or not.
+     */
+    isExpired(downscopedAccessToken) {
+        const now = new Date().getTime();
+        return downscopedAccessToken.expiry_date
+            ? now >=
+                downscopedAccessToken.expiry_date - this.eagerRefreshThresholdMillis
+            : false;
+    }
+}
+exports.DownscopedClient = DownscopedClient;
+//# sourceMappingURL=downscopedclient.js.map
+
+/***/ }),
+
 /***/ 642:
 /***/ (function(__unusedmodule, exports) {
 
@@ -38377,6 +40806,8 @@ var jwtaccess_1 = __webpack_require__(346);
 Object.defineProperty(exports, "JWTAccess", { enumerable: true, get: function () { return jwtaccess_1.JWTAccess; } });
 var jwtclient_1 = __webpack_require__(484);
 Object.defineProperty(exports, "JWT", { enumerable: true, get: function () { return jwtclient_1.JWT; } });
+var impersonated_1 = __webpack_require__(117);
+Object.defineProperty(exports, "Impersonated", { enumerable: true, get: function () { return impersonated_1.Impersonated; } });
 var oauth2client_1 = __webpack_require__(449);
 Object.defineProperty(exports, "CodeChallengeMethod", { enumerable: true, get: function () { return oauth2client_1.CodeChallengeMethod; } });
 Object.defineProperty(exports, "OAuth2Client", { enumerable: true, get: function () { return oauth2client_1.OAuth2Client; } });
@@ -38384,6 +40815,16 @@ var loginticket_1 = __webpack_require__(207);
 Object.defineProperty(exports, "LoginTicket", { enumerable: true, get: function () { return loginticket_1.LoginTicket; } });
 var refreshclient_1 = __webpack_require__(846);
 Object.defineProperty(exports, "UserRefreshClient", { enumerable: true, get: function () { return refreshclient_1.UserRefreshClient; } });
+var awsclient_1 = __webpack_require__(549);
+Object.defineProperty(exports, "AwsClient", { enumerable: true, get: function () { return awsclient_1.AwsClient; } });
+var identitypoolclient_1 = __webpack_require__(345);
+Object.defineProperty(exports, "IdentityPoolClient", { enumerable: true, get: function () { return identitypoolclient_1.IdentityPoolClient; } });
+var externalclient_1 = __webpack_require__(992);
+Object.defineProperty(exports, "ExternalAccountClient", { enumerable: true, get: function () { return externalclient_1.ExternalAccountClient; } });
+var baseexternalclient_1 = __webpack_require__(320);
+Object.defineProperty(exports, "BaseExternalAccountClient", { enumerable: true, get: function () { return baseexternalclient_1.BaseExternalAccountClient; } });
+var downscopedclient_1 = __webpack_require__(640);
+Object.defineProperty(exports, "DownscopedClient", { enumerable: true, get: function () { return downscopedclient_1.DownscopedClient; } });
 var transporters_1 = __webpack_require__(974);
 Object.defineProperty(exports, "DefaultTransporter", { enumerable: true, get: function () { return transporters_1.DefaultTransporter; } });
 const auth = new googleauth_1.GoogleAuth();
@@ -39030,6 +41471,121 @@ pss.create = function(options) {
 
 /***/ }),
 
+/***/ 732:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.StsCredentials = void 0;
+const querystring = __webpack_require__(191);
+const transporters_1 = __webpack_require__(974);
+const oauth2common_1 = __webpack_require__(994);
+/**
+ * Implements the OAuth 2.0 token exchange based on
+ * https://tools.ietf.org/html/rfc8693
+ */
+class StsCredentials extends oauth2common_1.OAuthClientAuthHandler {
+    /**
+     * Initializes an STS credentials instance.
+     * @param tokenExchangeEndpoint The token exchange endpoint.
+     * @param clientAuthentication The client authentication credentials if
+     *   available.
+     */
+    constructor(tokenExchangeEndpoint, clientAuthentication) {
+        super(clientAuthentication);
+        this.tokenExchangeEndpoint = tokenExchangeEndpoint;
+        this.transporter = new transporters_1.DefaultTransporter();
+    }
+    /**
+     * Exchanges the provided token for another type of token based on the
+     * rfc8693 spec.
+     * @param stsCredentialsOptions The token exchange options used to populate
+     *   the token exchange request.
+     * @param additionalHeaders Optional additional headers to pass along the
+     *   request.
+     * @param options Optional additional GCP-specific non-spec defined options
+     *   to send with the request.
+     *   Example: `&options=${encodeUriComponent(JSON.stringified(options))}`
+     * @return A promise that resolves with the token exchange response containing
+     *   the requested token and its expiration time.
+     */
+    async exchangeToken(stsCredentialsOptions, additionalHeaders, 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    options) {
+        var _a, _b, _c;
+        const values = {
+            grant_type: stsCredentialsOptions.grantType,
+            resource: stsCredentialsOptions.resource,
+            audience: stsCredentialsOptions.audience,
+            scope: (_a = stsCredentialsOptions.scope) === null || _a === void 0 ? void 0 : _a.join(' '),
+            requested_token_type: stsCredentialsOptions.requestedTokenType,
+            subject_token: stsCredentialsOptions.subjectToken,
+            subject_token_type: stsCredentialsOptions.subjectTokenType,
+            actor_token: (_b = stsCredentialsOptions.actingParty) === null || _b === void 0 ? void 0 : _b.actorToken,
+            actor_token_type: (_c = stsCredentialsOptions.actingParty) === null || _c === void 0 ? void 0 : _c.actorTokenType,
+            // Non-standard GCP-specific options.
+            options: options && JSON.stringify(options),
+        };
+        // Remove undefined fields.
+        Object.keys(values).forEach(key => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            if (typeof values[key] === 'undefined') {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                delete values[key];
+            }
+        });
+        const headers = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        };
+        // Inject additional STS headers if available.
+        Object.assign(headers, additionalHeaders || {});
+        const opts = {
+            url: this.tokenExchangeEndpoint,
+            method: 'POST',
+            headers,
+            data: querystring.stringify(values),
+            responseType: 'json',
+        };
+        // Apply OAuth client authentication.
+        this.applyClientAuthenticationOptions(opts);
+        try {
+            const response = await this.transporter.request(opts);
+            // Successful response.
+            const stsSuccessfulResponse = response.data;
+            stsSuccessfulResponse.res = response;
+            return stsSuccessfulResponse;
+        }
+        catch (error) {
+            // Translate error to OAuthError.
+            if (error.response) {
+                throw oauth2common_1.getErrorFromOAuthErrorResponse(error.response.data, 
+                // Preserve other fields from the original error.
+                error);
+            }
+            // Request could fail before the server responds.
+            throw error;
+        }
+    }
+}
+exports.StsCredentials = StsCredentials;
+//# sourceMappingURL=stscredentials.js.map
+
+/***/ }),
+
 /***/ 733:
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
@@ -39657,6 +42213,149 @@ module.exports = {
   }
 };
 
+
+/***/ }),
+
+/***/ 767:
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+// Copyright 2018 Google LLC
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getRetryConfig = void 0;
+async function getRetryConfig(err) {
+    var _a;
+    let config = getConfig(err);
+    if (!err || !err.config || (!config && !err.config.retry)) {
+        return { shouldRetry: false };
+    }
+    config = config || {};
+    config.currentRetryAttempt = config.currentRetryAttempt || 0;
+    config.retry =
+        config.retry === undefined || config.retry === null ? 3 : config.retry;
+    config.httpMethodsToRetry = config.httpMethodsToRetry || [
+        'GET',
+        'HEAD',
+        'PUT',
+        'OPTIONS',
+        'DELETE',
+    ];
+    config.noResponseRetries =
+        config.noResponseRetries === undefined || config.noResponseRetries === null
+            ? 2
+            : config.noResponseRetries;
+    // If this wasn't in the list of status codes where we want
+    // to automatically retry, return.
+    const retryRanges = [
+        // https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
+        // 1xx - Retry (Informational, request still processing)
+        // 2xx - Do not retry (Success)
+        // 3xx - Do not retry (Redirect)
+        // 4xx - Do not retry (Client errors)
+        // 429 - Retry ("Too Many Requests")
+        // 5xx - Retry (Server errors)
+        [100, 199],
+        [429, 429],
+        [500, 599],
+    ];
+    config.statusCodesToRetry = config.statusCodesToRetry || retryRanges;
+    // Put the config back into the err
+    err.config.retryConfig = config;
+    // Determine if we should retry the request
+    const shouldRetryFn = config.shouldRetry || shouldRetryRequest;
+    if (!(await shouldRetryFn(err))) {
+        return { shouldRetry: false, config: err.config };
+    }
+    // Calculate time to wait with exponential backoff.
+    // If this is the first retry, look for a configured retryDelay.
+    const retryDelay = config.currentRetryAttempt ? 0 : (_a = config.retryDelay) !== null && _a !== void 0 ? _a : 100;
+    // Formula: retryDelay + ((2^c - 1 / 2) * 1000)
+    const delay = retryDelay + ((Math.pow(2, config.currentRetryAttempt) - 1) / 2) * 1000;
+    // We're going to retry!  Incremenent the counter.
+    err.config.retryConfig.currentRetryAttempt += 1;
+    // Create a promise that invokes the retry after the backOffDelay
+    const backoff = new Promise(resolve => {
+        setTimeout(resolve, delay);
+    });
+    // Notify the user if they added an `onRetryAttempt` handler
+    if (config.onRetryAttempt) {
+        config.onRetryAttempt(err);
+    }
+    // Return the promise in which recalls Gaxios to retry the request
+    await backoff;
+    return { shouldRetry: true, config: err.config };
+}
+exports.getRetryConfig = getRetryConfig;
+/**
+ * Determine based on config if we should retry the request.
+ * @param err The GaxiosError passed to the interceptor.
+ */
+function shouldRetryRequest(err) {
+    const config = getConfig(err);
+    // node-fetch raises an AbortError if signaled:
+    // https://github.com/bitinn/node-fetch#request-cancellation-with-abortsignal
+    if (err.name === 'AbortError') {
+        return false;
+    }
+    // If there's no config, or retries are disabled, return.
+    if (!config || config.retry === 0) {
+        return false;
+    }
+    // Check if this error has no response (ETIMEDOUT, ENOTFOUND, etc)
+    if (!err.response &&
+        (config.currentRetryAttempt || 0) >= config.noResponseRetries) {
+        return false;
+    }
+    // Only retry with configured HttpMethods.
+    if (!err.config.method ||
+        config.httpMethodsToRetry.indexOf(err.config.method.toUpperCase()) < 0) {
+        return false;
+    }
+    // If this wasn't in the list of status codes where we want
+    // to automatically retry, return.
+    if (err.response && err.response.status) {
+        let isInRange = false;
+        for (const [min, max] of config.statusCodesToRetry) {
+            const status = err.response.status;
+            if (status >= min && status <= max) {
+                isInRange = true;
+                break;
+            }
+        }
+        if (!isInRange) {
+            return false;
+        }
+    }
+    // If we are out of retry attempts, return
+    config.currentRetryAttempt = config.currentRetryAttempt || 0;
+    if (config.currentRetryAttempt >= config.retry) {
+        return false;
+    }
+    return true;
+}
+/**
+ * Acquire the raxConfig object from an GaxiosError if available.
+ * @param err The Gaxios error with a config object.
+ */
+function getConfig(err) {
+    if (err && err.config && err.config.retryConfig) {
+        return err.config.retryConfig;
+    }
+    return;
+}
+//# sourceMappingURL=retry.js.map
 
 /***/ }),
 
@@ -42061,12 +44760,21 @@ exports.YAML = YAML;
  * This is the web browser implementation of `debug()`.
  */
 
-exports.log = log;
 exports.formatArgs = formatArgs;
 exports.save = save;
 exports.load = load;
 exports.useColors = useColors;
 exports.storage = localstorage();
+exports.destroy = (() => {
+	let warned = false;
+
+	return () => {
+		if (!warned) {
+			warned = true;
+			console.warn('Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.');
+		}
+	};
+})();
 
 /**
  * Colors.
@@ -42227,18 +44935,14 @@ function formatArgs(args) {
 }
 
 /**
- * Invokes `console.log()` when available.
- * No-op when `console.log` is not a "function".
+ * Invokes `console.debug()` when available.
+ * No-op when `console.debug` is not a "function".
+ * If `console.debug` is not available, falls back
+ * to `console.log`.
  *
  * @api public
  */
-function log(...args) {
-	// This hackery is required for IE8/9, where
-	// the `console.log` function doesn't have 'apply'
-	return typeof console === 'object' &&
-		console.log &&
-		console.log(...args);
-}
+exports.log = console.debug || console.log || (() => {});
 
 /**
  * Save `namespaces`.
@@ -44142,6 +46846,7 @@ var GCPEnv;
     GCPEnv["KUBERNETES_ENGINE"] = "KUBERNETES_ENGINE";
     GCPEnv["CLOUD_FUNCTIONS"] = "CLOUD_FUNCTIONS";
     GCPEnv["COMPUTE_ENGINE"] = "COMPUTE_ENGINE";
+    GCPEnv["CLOUD_RUN"] = "CLOUD_RUN";
     GCPEnv["NONE"] = "NONE";
 })(GCPEnv = exports.GCPEnv || (exports.GCPEnv = {}));
 let envPromise;
@@ -44169,6 +46874,9 @@ async function getEnvMemoized() {
         if (await isKubernetesEngine()) {
             env = GCPEnv.KUBERNETES_ENGINE;
         }
+        else if (isCloudRun()) {
+            env = GCPEnv.CLOUD_RUN;
+        }
         else {
             env = GCPEnv.COMPUTE_ENGINE;
         }
@@ -44183,6 +46891,14 @@ function isAppEngine() {
 }
 function isCloudFunction() {
     return !!(process.env.FUNCTION_NAME || process.env.FUNCTION_TARGET);
+}
+/**
+ * This check only verifies that the environment is running knative.
+ * This must be run *after* checking for Kubernetes, otherwise it will
+ * return a false positive.
+ */
+function isCloudRun() {
+    return !!process.env.K_CONFIGURATION;
 }
 async function isKubernetesEngine() {
     try {
@@ -45884,155 +48600,42 @@ exports.UserRefreshClient = UserRefreshClient;
 /***/ }),
 
 /***/ 849:
-/***/ (function(module, __unusedexports, __webpack_require__) {
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
 
+"use strict";
+
+// Copyright 2018 Google LLC
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.request = exports.instance = exports.Gaxios = void 0;
+const gaxios_1 = __webpack_require__(420);
+Object.defineProperty(exports, "Gaxios", { enumerable: true, get: function () { return gaxios_1.Gaxios; } });
+var common_1 = __webpack_require__(522);
+Object.defineProperty(exports, "GaxiosError", { enumerable: true, get: function () { return common_1.GaxiosError; } });
 /**
- * Hash-based Message Authentication Code implementation. Requires a message
- * digest object that can be obtained, for example, from forge.md.sha1 or
- * forge.md.md5.
- *
- * @author Dave Longley
- *
- * Copyright (c) 2010-2012 Digital Bazaar, Inc. All rights reserved.
+ * The default instance used when the `request` method is directly
+ * invoked.
  */
-var forge = __webpack_require__(763);
-__webpack_require__(532);
-__webpack_require__(219);
-
-/* HMAC API */
-var hmac = module.exports = forge.hmac = forge.hmac || {};
-
+exports.instance = new gaxios_1.Gaxios();
 /**
- * Creates an HMAC object that uses the given message digest object.
- *
- * @return an HMAC object.
+ * Make an HTTP request using the given options.
+ * @param opts Options for the request
  */
-hmac.create = function() {
-  // the hmac key to use
-  var _key = null;
-
-  // the message digest to use
-  var _md = null;
-
-  // the inner padding
-  var _ipadding = null;
-
-  // the outer padding
-  var _opadding = null;
-
-  // hmac context
-  var ctx = {};
-
-  /**
-   * Starts or restarts the HMAC with the given key and message digest.
-   *
-   * @param md the message digest to use, null to reuse the previous one,
-   *           a string to use builtin 'sha1', 'md5', 'sha256'.
-   * @param key the key to use as a string, array of bytes, byte buffer,
-   *           or null to reuse the previous key.
-   */
-  ctx.start = function(md, key) {
-    if(md !== null) {
-      if(typeof md === 'string') {
-        // create builtin message digest
-        md = md.toLowerCase();
-        if(md in forge.md.algorithms) {
-          _md = forge.md.algorithms[md].create();
-        } else {
-          throw new Error('Unknown hash algorithm "' + md + '"');
-        }
-      } else {
-        // store message digest
-        _md = md;
-      }
-    }
-
-    if(key === null) {
-      // reuse previous key
-      key = _key;
-    } else {
-      if(typeof key === 'string') {
-        // convert string into byte buffer
-        key = forge.util.createBuffer(key);
-      } else if(forge.util.isArray(key)) {
-        // convert byte array into byte buffer
-        var tmp = key;
-        key = forge.util.createBuffer();
-        for(var i = 0; i < tmp.length; ++i) {
-          key.putByte(tmp[i]);
-        }
-      }
-
-      // if key is longer than blocksize, hash it
-      var keylen = key.length();
-      if(keylen > _md.blockLength) {
-        _md.start();
-        _md.update(key.bytes());
-        key = _md.digest();
-      }
-
-      // mix key into inner and outer padding
-      // ipadding = [0x36 * blocksize] ^ key
-      // opadding = [0x5C * blocksize] ^ key
-      _ipadding = forge.util.createBuffer();
-      _opadding = forge.util.createBuffer();
-      keylen = key.length();
-      for(var i = 0; i < keylen; ++i) {
-        var tmp = key.at(i);
-        _ipadding.putByte(0x36 ^ tmp);
-        _opadding.putByte(0x5C ^ tmp);
-      }
-
-      // if key is shorter than blocksize, add additional padding
-      if(keylen < _md.blockLength) {
-        var tmp = _md.blockLength - keylen;
-        for(var i = 0; i < tmp; ++i) {
-          _ipadding.putByte(0x36);
-          _opadding.putByte(0x5C);
-        }
-      }
-      _key = key;
-      _ipadding = _ipadding.bytes();
-      _opadding = _opadding.bytes();
-    }
-
-    // digest is done like so: hash(opadding | hash(ipadding | message))
-
-    // prepare to do inner hash
-    // hash(ipadding | message)
-    _md.start();
-    _md.update(_ipadding);
-  };
-
-  /**
-   * Updates the HMAC with the given message bytes.
-   *
-   * @param bytes the bytes to update with.
-   */
-  ctx.update = function(bytes) {
-    _md.update(bytes);
-  };
-
-  /**
-   * Produces the Message Authentication Code (MAC).
-   *
-   * @return a byte buffer containing the digest value.
-   */
-  ctx.getMac = function() {
-    // digest is done like so: hash(opadding | hash(ipadding | message))
-    // here we do the outer hashing
-    var inner = _md.digest().bytes();
-    _md.start();
-    _md.update(_opadding);
-    _md.update(inner);
-    return _md.digest();
-  };
-  // alias for getMac
-  ctx.digest = ctx.getMac;
-
-  return ctx;
-};
-
+async function request(opts) {
+    return exports.instance.request(opts);
+}
+exports.request = request;
+//# sourceMappingURL=index.js.map
 
 /***/ }),
 
@@ -47320,7 +49923,7 @@ BigInteger.prototype.isProbablePrime = bnIsProbablePrime;
  * Copyright (c) 2010-2013 Digital Bazaar, Inc.
  */
 var forge = __webpack_require__(763);
-__webpack_require__(849);
+__webpack_require__(530);
 __webpack_require__(532);
 __webpack_require__(219);
 
@@ -48584,7 +51187,7 @@ function _update(s, w, bytes) {
 /***/ 947:
 /***/ (function(module) {
 
-module.exports = {"name":"google-auth-library","version":"6.0.6","author":"Google Inc.","description":"Google APIs Authentication Client Library for Node.js","engines":{"node":">=10"},"main":"./build/src/index.js","types":"./build/src/index.d.ts","repository":"googleapis/google-auth-library-nodejs.git","keywords":["google","api","google apis","client","client library"],"dependencies":{"arrify":"^2.0.0","base64-js":"^1.3.0","ecdsa-sig-formatter":"^1.0.11","fast-text-encoding":"^1.0.0","gaxios":"^3.0.0","gcp-metadata":"^4.1.0","gtoken":"^5.0.0","jws":"^4.0.0","lru-cache":"^6.0.0"},"devDependencies":{"@compodoc/compodoc":"^1.1.7","@types/base64-js":"^1.2.5","@types/chai":"^4.1.7","@types/jws":"^3.1.0","@types/lru-cache":"^5.0.0","@types/mocha":"^8.0.0","@types/mv":"^2.1.0","@types/ncp":"^2.0.1","@types/node":"^10.5.1","@types/sinon":"^9.0.0","@types/tmp":"^0.2.0","assert-rejects":"^1.0.0","c8":"^7.0.0","chai":"^4.2.0","codecov":"^3.0.2","execa":"^4.0.0","gts":"^2.0.0","is-docker":"^2.0.0","karma":"^5.0.0","karma-chrome-launcher":"^3.0.0","karma-coverage":"^2.0.0","karma-firefox-launcher":"^1.1.0","karma-mocha":"^2.0.0","karma-remap-coverage":"^0.1.5","karma-sourcemap-loader":"^0.3.7","karma-webpack":"^4.0.0","keypair":"^1.0.1","linkinator":"^2.0.0","mocha":"^8.0.0","mv":"^2.1.1","ncp":"^2.0.0","nock":"^13.0.0","null-loader":"^4.0.0","puppeteer":"^5.0.0","sinon":"^9.0.0","tmp":"^0.2.0","ts-loader":"^8.0.0","typescript":"^3.8.3","webpack":"^4.20.2","webpack-cli":"^3.1.1","@microsoft/api-documenter":"^7.8.10","@microsoft/api-extractor":"^7.8.10"},"files":["build/src","!build/src/**/*.map"],"scripts":{"test":"c8 mocha build/test","clean":"gts clean","prepare":"npm run compile","lint":"gts check","compile":"tsc -p .","fix":"gts fix","pretest":"npm run compile","docs":"compodoc src/","samples-test":"cd samples/ && npm link ../ && npm test && cd ../","system-test":"mocha build/system-test --timeout 60000","presystem-test":"npm run compile","webpack":"webpack","browser-test":"karma start","docs-test":"linkinator docs","predocs-test":"npm run docs","prelint":"cd samples; npm link ../; npm install","precompile":"gts clean","api-extractor":"api-extractor run --local","api-documenter":"api-documenter yaml --input-folder=temp"},"license":"Apache-2.0","_resolved":"https://registry.npmjs.org/google-auth-library/-/google-auth-library-6.0.6.tgz","_integrity":"sha512-fWYdRdg55HSJoRq9k568jJA1lrhg9i2xgfhVIMJbskUmbDpJGHsbv9l41DGhCDXM21F9Kn4kUwdysgxSYBYJUw==","_from":"google-auth-library@6.0.6"};
+module.exports = {"name":"google-auth-library","version":"7.9.2","author":"Google Inc.","description":"Google APIs Authentication Client Library for Node.js","engines":{"node":">=10"},"main":"./build/src/index.js","types":"./build/src/index.d.ts","repository":"googleapis/google-auth-library-nodejs.git","keywords":["google","api","google apis","client","client library"],"dependencies":{"arrify":"^2.0.0","base64-js":"^1.3.0","ecdsa-sig-formatter":"^1.0.11","fast-text-encoding":"^1.0.0","gaxios":"^4.0.0","gcp-metadata":"^4.2.0","gtoken":"^5.0.4","jws":"^4.0.0","lru-cache":"^6.0.0"},"devDependencies":{"@compodoc/compodoc":"^1.1.7","@types/base64-js":"^1.2.5","@types/chai":"^4.1.7","@types/jws":"^3.1.0","@types/lru-cache":"^5.0.0","@types/mocha":"^8.0.0","@types/mv":"^2.1.0","@types/ncp":"^2.0.1","@types/node":"^14.0.0","@types/sinon":"^10.0.0","@types/tmp":"^0.2.0","assert-rejects":"^1.0.0","c8":"^7.0.0","chai":"^4.2.0","codecov":"^3.0.2","execa":"^5.0.0","gts":"^2.0.0","is-docker":"^2.0.0","karma":"^6.0.0","karma-chrome-launcher":"^3.0.0","karma-coverage":"^2.0.0","karma-firefox-launcher":"^2.0.0","karma-mocha":"^2.0.0","karma-remap-coverage":"^0.1.5","karma-sourcemap-loader":"^0.3.7","karma-webpack":"^5.0.0","keypair":"^1.0.1","linkinator":"^2.0.0","mocha":"^8.0.0","mv":"^2.1.1","ncp":"^2.0.0","nock":"^13.0.0","null-loader":"^4.0.0","puppeteer":"^10.0.0","sinon":"^11.0.0","tmp":"^0.2.0","ts-loader":"^8.0.0","typescript":"^3.8.3","webpack":"^5.21.2","webpack-cli":"^4.0.0"},"files":["build/src","!build/src/**/*.map"],"scripts":{"test":"c8 mocha build/test","clean":"gts clean","prepare":"npm run compile","lint":"gts check","compile":"tsc -p .","fix":"gts fix","pretest":"npm run compile","docs":"compodoc src/","samples-setup":"cd samples/ && npm link ../ && npm run setup && cd ../","samples-test":"cd samples/ && npm link ../ && npm test && cd ../","system-test":"mocha build/system-test --timeout 60000","presystem-test":"npm run compile","webpack":"webpack","browser-test":"karma start","docs-test":"linkinator docs","predocs-test":"npm run docs","prelint":"cd samples; npm link ../; npm install","precompile":"gts clean"},"license":"Apache-2.0","_resolved":"https://registry.npmjs.org/google-auth-library/-/google-auth-library-7.9.2.tgz","_integrity":"sha512-HjxbJt660a+YUTYAgYor87JCuBZvjUSNBExk4bXTEaMuCn8IHSDeHmFxKqThuDPrLCiKJp8blk/Ze8f7SI4N6g==","_from":"google-auth-library@7.9.2"};
 
 /***/ }),
 
@@ -48620,6 +51223,8 @@ const idtokenclient_1 = __webpack_require__(331);
 const envDetect_1 = __webpack_require__(813);
 const jwtclient_1 = __webpack_require__(484);
 const refreshclient_1 = __webpack_require__(846);
+const externalclient_1 = __webpack_require__(992);
+const baseexternalclient_1 = __webpack_require__(320);
 exports.CLOUD_SDK_CLIENT_ID = '764086051850-6qr4p6gpi6hn506pt8ejuq83di341hur.apps.googleusercontent.com';
 class GoogleAuth {
     constructor(opts) {
@@ -48643,6 +51248,14 @@ class GoogleAuth {
     // https://github.com/Microsoft/TypeScript/issues/5228
     get isGCE() {
         return this.checkIsGCE;
+    }
+    // GAPIC client libraries should always use self-signed JWTs. The following
+    // variables are set on the JWT client in order to indicate the type of library,
+    // and sign the JWT with the correct audience and scopes (if not supplied).
+    setGapicJWTValues(client) {
+        client.defaultServicePath = this.defaultServicePath;
+        client.useJWTAccessWithScope = this.useJWTAccessWithScope;
+        client.defaultScopes = this.defaultScopes;
     }
     getProjectId(callback) {
         if (callback) {
@@ -48672,7 +51285,8 @@ class GoogleAuth {
                     const projectId = this.getProductionProjectId() ||
                         (await this.getFileProjectId()) ||
                         (await this.getDefaultServiceProjectId()) ||
-                        (await this.getGCEProjectId());
+                        (await this.getGCEProjectId()) ||
+                        (await this.getExternalAccountClientProjectId());
                     this._cachedProjectId = projectId;
                     if (!projectId) {
                         throw new Error('Unable to detect a Project Id in the current environment. \n' +
@@ -48687,6 +51301,13 @@ class GoogleAuth {
             });
         }
         return this._getDefaultProjectIdPromise;
+    }
+    /**
+     * @returns Any scopes (user-specified or default scopes specified by the
+     *   client library) that need to be set on the current Auth client.
+     */
+    getAnyScopes() {
+        return this.scopes || this.defaultScopes;
     }
     getApplicationDefault(optionsOrCallback = {}, callback) {
         let options;
@@ -48716,10 +51337,14 @@ class GoogleAuth {
         // Check for the existence of a local environment variable pointing to the
         // location of the credential file. This is typically used in local
         // developer scenarios.
-        credential = await this._tryGetApplicationCredentialsFromEnvironmentVariable(options);
+        credential =
+            await this._tryGetApplicationCredentialsFromEnvironmentVariable(options);
         if (credential) {
             if (credential instanceof jwtclient_1.JWT) {
                 credential.scopes = this.scopes;
+            }
+            else if (credential instanceof baseexternalclient_1.BaseExternalAccountClient) {
+                credential.scopes = this.getAnyScopes();
             }
             this.cachedCredential = credential;
             projectId = await this.getProjectId();
@@ -48730,6 +51355,9 @@ class GoogleAuth {
         if (credential) {
             if (credential instanceof jwtclient_1.JWT) {
                 credential.scopes = this.scopes;
+            }
+            else if (credential instanceof baseexternalclient_1.BaseExternalAccountClient) {
+                credential.scopes = this.getAnyScopes();
             }
             this.cachedCredential = credential;
             projectId = await this.getProjectId();
@@ -48750,7 +51378,7 @@ class GoogleAuth {
         }
         // For GCE, just return a default ComputeClient. It will take care of
         // the rest.
-        options.scopes = this.scopes;
+        options.scopes = this.getAnyScopes();
         this.cachedCredential = new computeclient_1.Compute(options);
         projectId = await this.getProjectId();
         return { projectId, credential: this.cachedCredential };
@@ -48862,12 +51490,18 @@ class GoogleAuth {
         options = options || {};
         if (json.type === 'authorized_user') {
             client = new refreshclient_1.UserRefreshClient(options);
+            client.fromJSON(json);
+        }
+        else if (json.type === baseexternalclient_1.EXTERNAL_ACCOUNT_TYPE) {
+            client = externalclient_1.ExternalAccountClient.fromJSON(json, options);
+            client.scopes = this.getAnyScopes();
         }
         else {
             options.scopes = this.scopes;
             client = new jwtclient_1.JWT(options);
+            this.setGapicJWTValues(client);
+            client.fromJSON(json);
         }
-        client.fromJSON(json);
         return client;
     }
     /**
@@ -48883,12 +51517,18 @@ class GoogleAuth {
         options = options || {};
         if (json.type === 'authorized_user') {
             client = new refreshclient_1.UserRefreshClient(options);
+            client.fromJSON(json);
+        }
+        else if (json.type === baseexternalclient_1.EXTERNAL_ACCOUNT_TYPE) {
+            client = externalclient_1.ExternalAccountClient.fromJSON(json, options);
+            client.scopes = this.getAnyScopes();
         }
         else {
             options.scopes = this.scopes;
             client = new jwtclient_1.JWT(options);
+            this.setGapicJWTValues(client);
+            client.fromJSON(json);
         }
-        client.fromJSON(json);
         // cache both raw data used to instantiate client and client itself.
         this.jsonContent = json;
         this.cachedCredential = client;
@@ -48921,9 +51561,24 @@ class GoogleAuth {
                 .on('data', chunk => (s += chunk))
                 .on('end', () => {
                 try {
-                    const data = JSON.parse(s);
-                    const r = this._cacheClientFromJSON(data, options);
-                    return resolve(r);
+                    try {
+                        const data = JSON.parse(s);
+                        const r = this._cacheClientFromJSON(data, options);
+                        return resolve(r);
+                    }
+                    catch (err) {
+                        // If we failed parsing this.keyFileName, assume that it
+                        // is a PEM or p12 certificate:
+                        if (!this.keyFilename)
+                            throw err;
+                        const client = new jwtclient_1.JWT({
+                            ...this.clientOptions,
+                            keyFile: this.keyFilename,
+                        });
+                        this.cachedCredential = client;
+                        this.setGapicJWTValues(client);
+                        return resolve(client);
+                    }
                 }
                 catch (err) {
                     return reject(err);
@@ -48964,8 +51619,7 @@ class GoogleAuth {
             child_process_1.exec('gcloud config config-helper --format json', (err, stdout) => {
                 if (!err && stdout) {
                     try {
-                        const projectId = JSON.parse(stdout).configuration.properties.core
-                            .project;
+                        const projectId = JSON.parse(stdout).configuration.properties.core.project;
                         resolve(projectId);
                         return;
                     }
@@ -49011,6 +51665,27 @@ class GoogleAuth {
         else {
             return null;
         }
+    }
+    /**
+     * Gets the project ID from external account client if available.
+     */
+    async getExternalAccountClientProjectId() {
+        if (!this.jsonContent || this.jsonContent.type !== baseexternalclient_1.EXTERNAL_ACCOUNT_TYPE) {
+            return null;
+        }
+        const creds = await this.getClient();
+        // Do not suppress the underlying error, as the error could contain helpful
+        // information for debugging and fixing. This is especially true for
+        // external account creds as in order to get the project ID, the following
+        // operations have to succeed:
+        // 1. Valid credentials file should be supplied.
+        // 2. Ability to retrieve access tokens from STS token exchange API.
+        // 3. Ability to exchange for service account impersonated credentials (if
+        //    enabled).
+        // 4. Ability to get project info using the access token from step 2 or 3.
+        // Without surfacing the error, it is harder for developers to determine
+        // which step went wrong.
+        return await creds.getProjectId();
     }
     /**
      * Gets the Compute Engine project ID if it can be inferred.
@@ -49151,6 +51826,16 @@ class GoogleAuth {
             const sign = await crypto.sign(client.key, data);
             return sign;
         }
+        // signBlob requires a service account email and the underlying
+        // access token to have iam.serviceAccounts.signBlob permission
+        // on the specified resource name.
+        // The "Service Account Token Creator" role should cover this.
+        // As a result external account credentials can support this
+        // operation when service account impersonation is enabled.
+        if (client instanceof baseexternalclient_1.BaseExternalAccountClient &&
+            client.getServiceAccountEmail()) {
+            return this.signBlob(crypto, client.getServiceAccountEmail(), data);
+        }
         const projectId = await this.getProjectId();
         if (!projectId) {
             throw new Error('Cannot sign data without a project ID.');
@@ -49159,7 +51844,11 @@ class GoogleAuth {
         if (!creds.client_email) {
             throw new Error('Cannot sign data without `client_email`.');
         }
-        const url = `https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${creds.client_email}:signBlob`;
+        return this.signBlob(crypto, creds.client_email, data);
+    }
+    async signBlob(crypto, emailOrUniqueId, data) {
+        const url = 'https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/' +
+            `${emailOrUniqueId}:signBlob`;
         const res = await this.request({
             method: 'POST',
             url,
@@ -49176,6 +51865,317 @@ exports.GoogleAuth = GoogleAuth;
  */
 GoogleAuth.DefaultTransporter = transporters_1.DefaultTransporter;
 //# sourceMappingURL=googleauth.js.map
+
+/***/ }),
+
+/***/ 966:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2018 Google LLC
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Gaxios = void 0;
+const extend_1 = __importDefault(__webpack_require__(374));
+const https_1 = __webpack_require__(211);
+const node_fetch_1 = __importDefault(__webpack_require__(454));
+const querystring_1 = __importDefault(__webpack_require__(191));
+const is_stream_1 = __importDefault(__webpack_require__(323));
+const url_1 = __webpack_require__(835);
+const common_1 = __webpack_require__(34);
+const retry_1 = __webpack_require__(279);
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const fetch = hasFetch() ? window.fetch : node_fetch_1.default;
+function hasWindow() {
+    return typeof window !== 'undefined' && !!window;
+}
+function hasFetch() {
+    return hasWindow() && !!window.fetch;
+}
+function hasBuffer() {
+    return typeof Buffer !== 'undefined';
+}
+function hasHeader(options, header) {
+    return !!getHeader(options, header);
+}
+function getHeader(options, header) {
+    header = header.toLowerCase();
+    for (const key of Object.keys((options === null || options === void 0 ? void 0 : options.headers) || {})) {
+        if (header === key.toLowerCase()) {
+            return options.headers[key];
+        }
+    }
+    return undefined;
+}
+let HttpsProxyAgent;
+function loadProxy() {
+    const proxy = process.env.HTTPS_PROXY ||
+        process.env.https_proxy ||
+        process.env.HTTP_PROXY ||
+        process.env.http_proxy;
+    if (proxy) {
+        HttpsProxyAgent = __webpack_require__(338);
+    }
+    return proxy;
+}
+loadProxy();
+function skipProxy(url) {
+    var _a;
+    const noProxyEnv = (_a = process.env.NO_PROXY) !== null && _a !== void 0 ? _a : process.env.no_proxy;
+    if (!noProxyEnv) {
+        return false;
+    }
+    const noProxyUrls = noProxyEnv.split(',');
+    const parsedURL = new url_1.URL(url);
+    return !!noProxyUrls.find(url => {
+        if (url.startsWith('*.') || url.startsWith('.')) {
+            url = url.replace('*', '');
+            return parsedURL.hostname.endsWith(url);
+        }
+        else {
+            return url === parsedURL.origin || url === parsedURL.hostname;
+        }
+    });
+}
+// Figure out if we should be using a proxy. Only if it's required, load
+// the https-proxy-agent module as it adds startup cost.
+function getProxy(url) {
+    // If there is a match between the no_proxy env variables and the url, then do not proxy
+    if (skipProxy(url)) {
+        return undefined;
+        // If there is not a match between the no_proxy env variables and the url, check to see if there should be a proxy
+    }
+    else {
+        return loadProxy();
+    }
+}
+class Gaxios {
+    /**
+     * The Gaxios class is responsible for making HTTP requests.
+     * @param defaults The default set of options to be used for this instance.
+     */
+    constructor(defaults) {
+        this.agentCache = new Map();
+        this.defaults = defaults || {};
+    }
+    /**
+     * Perform an HTTP request with the given options.
+     * @param opts Set of HTTP options that will be used for this HTTP request.
+     */
+    async request(opts = {}) {
+        opts = this.validateOpts(opts);
+        return this._request(opts);
+    }
+    async _defaultAdapter(opts) {
+        const fetchImpl = opts.fetchImplementation || fetch;
+        const res = (await fetchImpl(opts.url, opts));
+        const data = await this.getResponseData(opts, res);
+        return this.translateResponse(opts, res, data);
+    }
+    /**
+     * Internal, retryable version of the `request` method.
+     * @param opts Set of HTTP options that will be used for this HTTP request.
+     */
+    async _request(opts = {}) {
+        try {
+            let translatedResponse;
+            if (opts.adapter) {
+                translatedResponse = await opts.adapter(opts, this._defaultAdapter.bind(this));
+            }
+            else {
+                translatedResponse = await this._defaultAdapter(opts);
+            }
+            if (!opts.validateStatus(translatedResponse.status)) {
+                throw new common_1.GaxiosError(`Request failed with status code ${translatedResponse.status}`, opts, translatedResponse);
+            }
+            return translatedResponse;
+        }
+        catch (e) {
+            const err = e;
+            err.config = opts;
+            const { shouldRetry, config } = await retry_1.getRetryConfig(e);
+            if (shouldRetry && config) {
+                err.config.retryConfig.currentRetryAttempt =
+                    config.retryConfig.currentRetryAttempt;
+                return this._request(err.config);
+            }
+            throw err;
+        }
+    }
+    async getResponseData(opts, res) {
+        switch (opts.responseType) {
+            case 'stream':
+                return res.body;
+            case 'json': {
+                let data = await res.text();
+                try {
+                    data = JSON.parse(data);
+                }
+                catch (_a) {
+                    // continue
+                }
+                return data;
+            }
+            case 'arraybuffer':
+                return res.arrayBuffer();
+            case 'blob':
+                return res.blob();
+            default:
+                return res.text();
+        }
+    }
+    /**
+     * Validates the options, and merges them with defaults.
+     * @param opts The original options passed from the client.
+     */
+    validateOpts(options) {
+        const opts = extend_1.default(true, {}, this.defaults, options);
+        if (!opts.url) {
+            throw new Error('URL is required.');
+        }
+        // baseUrl has been deprecated, remove in 2.0
+        const baseUrl = opts.baseUrl || opts.baseURL;
+        if (baseUrl) {
+            opts.url = baseUrl + opts.url;
+        }
+        opts.paramsSerializer = opts.paramsSerializer || this.paramsSerializer;
+        if (opts.params && Object.keys(opts.params).length > 0) {
+            let additionalQueryParams = opts.paramsSerializer(opts.params);
+            if (additionalQueryParams.startsWith('?')) {
+                additionalQueryParams = additionalQueryParams.slice(1);
+            }
+            const prefix = opts.url.includes('?') ? '&' : '?';
+            opts.url = opts.url + prefix + additionalQueryParams;
+        }
+        if (typeof options.maxContentLength === 'number') {
+            opts.size = options.maxContentLength;
+        }
+        if (typeof options.maxRedirects === 'number') {
+            opts.follow = options.maxRedirects;
+        }
+        opts.headers = opts.headers || {};
+        if (opts.data) {
+            if (is_stream_1.default.readable(opts.data)) {
+                opts.body = opts.data;
+            }
+            else if (hasBuffer() && Buffer.isBuffer(opts.data)) {
+                // Do not attempt to JSON.stringify() a Buffer:
+                opts.body = opts.data;
+                if (!hasHeader(opts, 'Content-Type')) {
+                    opts.headers['Content-Type'] = 'application/json';
+                }
+            }
+            else if (typeof opts.data === 'object') {
+                // If www-form-urlencoded content type has been set, but data is
+                // provided as an object, serialize the content using querystring:
+                if (getHeader(opts, 'content-type') ===
+                    'application/x-www-form-urlencoded') {
+                    opts.body = opts.paramsSerializer(opts.data);
+                }
+                else {
+                    if (!hasHeader(opts, 'Content-Type')) {
+                        opts.headers['Content-Type'] = 'application/json';
+                    }
+                    opts.body = JSON.stringify(opts.data);
+                }
+            }
+            else {
+                opts.body = opts.data;
+            }
+        }
+        opts.validateStatus = opts.validateStatus || this.validateStatus;
+        opts.responseType = opts.responseType || 'json';
+        if (!opts.headers['Accept'] && opts.responseType === 'json') {
+            opts.headers['Accept'] = 'application/json';
+        }
+        opts.method = opts.method || 'GET';
+        const proxy = getProxy(opts.url);
+        if (proxy) {
+            if (this.agentCache.has(proxy)) {
+                opts.agent = this.agentCache.get(proxy);
+            }
+            else {
+                // Proxy is being used in conjunction with mTLS.
+                if (opts.cert && opts.key) {
+                    const parsedURL = new url_1.URL(proxy);
+                    opts.agent = new HttpsProxyAgent({
+                        port: parsedURL.port,
+                        host: parsedURL.host,
+                        protocol: parsedURL.protocol,
+                        cert: opts.cert,
+                        key: opts.key,
+                    });
+                }
+                else {
+                    opts.agent = new HttpsProxyAgent(proxy);
+                }
+                this.agentCache.set(proxy, opts.agent);
+            }
+        }
+        else if (opts.cert && opts.key) {
+            // Configure client for mTLS:
+            if (this.agentCache.has(opts.key)) {
+                opts.agent = this.agentCache.get(opts.key);
+            }
+            else {
+                opts.agent = new https_1.Agent({
+                    cert: opts.cert,
+                    key: opts.key,
+                });
+                this.agentCache.set(opts.key, opts.agent);
+            }
+        }
+        return opts;
+    }
+    /**
+     * By default, throw for any non-2xx status code
+     * @param status status code from the HTTP response
+     */
+    validateStatus(status) {
+        return status >= 200 && status < 300;
+    }
+    /**
+     * Encode a set of key/value pars into a querystring format (?foo=bar&baz=boo)
+     * @param params key value pars to encode
+     */
+    paramsSerializer(params) {
+        return querystring_1.default.stringify(params);
+    }
+    translateResponse(opts, res, data) {
+        // headers need to be converted from a map to an obj
+        const headers = {};
+        res.headers.forEach((value, key) => {
+            headers[key] = value;
+        });
+        return {
+            config: opts,
+            data: data,
+            headers,
+            status: res.status,
+            statusText: res.statusText,
+            // XMLHttpRequestLike
+            request: {
+                responseURL: res.url,
+            },
+        };
+    }
+}
+exports.Gaxios = Gaxios;
+//# sourceMappingURL=gaxios.js.map
 
 /***/ }),
 
@@ -49308,7 +52308,7 @@ pki.privateKeyInfoToPem = function(pki, maxline) {
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DefaultTransporter = void 0;
-const gaxios_1 = __webpack_require__(597);
+const gaxios_1 = __webpack_require__(849);
 const options_1 = __webpack_require__(882);
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const pkg = __webpack_require__(947);
@@ -49661,7 +52661,7 @@ module.exports = {"application/prs.cww":["cww"],"application/vnd.1000minds.decis
 // limitations under the License.
 /* global window */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.hasBrowserCrypto = exports.createCrypto = void 0;
+exports.fromArrayBufferToHex = exports.hasBrowserCrypto = exports.createCrypto = void 0;
 const crypto_1 = __webpack_require__(378);
 const crypto_2 = __webpack_require__(386);
 function createCrypto() {
@@ -49677,7 +52677,272 @@ function hasBrowserCrypto() {
         typeof window.crypto.subtle !== 'undefined');
 }
 exports.hasBrowserCrypto = hasBrowserCrypto;
+/**
+ * Converts an ArrayBuffer to a hexadecimal string.
+ * @param arrayBuffer The ArrayBuffer to convert to hexadecimal string.
+ * @return The hexadecimal encoding of the ArrayBuffer.
+ */
+function fromArrayBufferToHex(arrayBuffer) {
+    // Convert buffer to byte array.
+    const byteArray = Array.from(new Uint8Array(arrayBuffer));
+    // Convert bytes to hex string.
+    return byteArray
+        .map(byte => {
+        return byte.toString(16).padStart(2, '0');
+    })
+        .join('');
+}
+exports.fromArrayBufferToHex = fromArrayBufferToHex;
 //# sourceMappingURL=crypto.js.map
+
+/***/ }),
+
+/***/ 992:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ExternalAccountClient = void 0;
+const baseexternalclient_1 = __webpack_require__(320);
+const identitypoolclient_1 = __webpack_require__(345);
+const awsclient_1 = __webpack_require__(549);
+/**
+ * Dummy class with no constructor. Developers are expected to use fromJSON.
+ */
+class ExternalAccountClient {
+    constructor() {
+        throw new Error('ExternalAccountClients should be initialized via: ' +
+            'ExternalAccountClient.fromJSON(), ' +
+            'directly via explicit constructors, eg. ' +
+            'new AwsClient(options), new IdentityPoolClient(options) or via ' +
+            'new GoogleAuth(options).getClient()');
+    }
+    /**
+     * This static method will instantiate the
+     * corresponding type of external account credential depending on the
+     * underlying credential source.
+     * @param options The external account options object typically loaded
+     *   from the external account JSON credential file.
+     * @param additionalOptions Optional additional behavior customization
+     *   options. These currently customize expiration threshold time and
+     *   whether to retry on 401/403 API request errors.
+     * @return A BaseExternalAccountClient instance or null if the options
+     *   provided do not correspond to an external account credential.
+     */
+    static fromJSON(options, additionalOptions) {
+        var _a;
+        if (options && options.type === baseexternalclient_1.EXTERNAL_ACCOUNT_TYPE) {
+            if ((_a = options.credential_source) === null || _a === void 0 ? void 0 : _a.environment_id) {
+                return new awsclient_1.AwsClient(options, additionalOptions);
+            }
+            else {
+                return new identitypoolclient_1.IdentityPoolClient(options, additionalOptions);
+            }
+        }
+        else {
+            return null;
+        }
+    }
+}
+exports.ExternalAccountClient = ExternalAccountClient;
+//# sourceMappingURL=externalclient.js.map
+
+/***/ }),
+
+/***/ 994:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getErrorFromOAuthErrorResponse = exports.OAuthClientAuthHandler = void 0;
+const querystring = __webpack_require__(191);
+const crypto_1 = __webpack_require__(984);
+/** List of HTTP methods that accept request bodies. */
+const METHODS_SUPPORTING_REQUEST_BODY = ['PUT', 'POST', 'PATCH'];
+/**
+ * Abstract class for handling client authentication in OAuth-based
+ * operations.
+ * When request-body client authentication is used, only application/json and
+ * application/x-www-form-urlencoded content types for HTTP methods that support
+ * request bodies are supported.
+ */
+class OAuthClientAuthHandler {
+    /**
+     * Instantiates an OAuth client authentication handler.
+     * @param clientAuthentication The client auth credentials.
+     */
+    constructor(clientAuthentication) {
+        this.clientAuthentication = clientAuthentication;
+        this.crypto = crypto_1.createCrypto();
+    }
+    /**
+     * Applies client authentication on the OAuth request's headers or POST
+     * body but does not process the request.
+     * @param opts The GaxiosOptions whose headers or data are to be modified
+     *   depending on the client authentication mechanism to be used.
+     * @param bearerToken The optional bearer token to use for authentication.
+     *   When this is used, no client authentication credentials are needed.
+     */
+    applyClientAuthenticationOptions(opts, bearerToken) {
+        // Inject authenticated header.
+        this.injectAuthenticatedHeaders(opts, bearerToken);
+        // Inject authenticated request body.
+        if (!bearerToken) {
+            this.injectAuthenticatedRequestBody(opts);
+        }
+    }
+    /**
+     * Applies client authentication on the request's header if either
+     * basic authentication or bearer token authentication is selected.
+     *
+     * @param opts The GaxiosOptions whose headers or data are to be modified
+     *   depending on the client authentication mechanism to be used.
+     * @param bearerToken The optional bearer token to use for authentication.
+     *   When this is used, no client authentication credentials are needed.
+     */
+    injectAuthenticatedHeaders(opts, bearerToken) {
+        var _a;
+        // Bearer token prioritized higher than basic Auth.
+        if (bearerToken) {
+            opts.headers = opts.headers || {};
+            Object.assign(opts.headers, {
+                Authorization: `Bearer ${bearerToken}}`,
+            });
+        }
+        else if (((_a = this.clientAuthentication) === null || _a === void 0 ? void 0 : _a.confidentialClientType) === 'basic') {
+            opts.headers = opts.headers || {};
+            const clientId = this.clientAuthentication.clientId;
+            const clientSecret = this.clientAuthentication.clientSecret || '';
+            const base64EncodedCreds = this.crypto.encodeBase64StringUtf8(`${clientId}:${clientSecret}`);
+            Object.assign(opts.headers, {
+                Authorization: `Basic ${base64EncodedCreds}`,
+            });
+        }
+    }
+    /**
+     * Applies client authentication on the request's body if request-body
+     * client authentication is selected.
+     *
+     * @param opts The GaxiosOptions whose headers or data are to be modified
+     *   depending on the client authentication mechanism to be used.
+     */
+    injectAuthenticatedRequestBody(opts) {
+        var _a;
+        if (((_a = this.clientAuthentication) === null || _a === void 0 ? void 0 : _a.confidentialClientType) === 'request-body') {
+            const method = (opts.method || 'GET').toUpperCase();
+            // Inject authenticated request body.
+            if (METHODS_SUPPORTING_REQUEST_BODY.indexOf(method) !== -1) {
+                // Get content-type.
+                let contentType;
+                const headers = opts.headers || {};
+                for (const key in headers) {
+                    if (key.toLowerCase() === 'content-type' && headers[key]) {
+                        contentType = headers[key].toLowerCase();
+                        break;
+                    }
+                }
+                if (contentType === 'application/x-www-form-urlencoded') {
+                    opts.data = opts.data || '';
+                    const data = querystring.parse(opts.data);
+                    Object.assign(data, {
+                        client_id: this.clientAuthentication.clientId,
+                        client_secret: this.clientAuthentication.clientSecret || '',
+                    });
+                    opts.data = querystring.stringify(data);
+                }
+                else if (contentType === 'application/json') {
+                    opts.data = opts.data || {};
+                    Object.assign(opts.data, {
+                        client_id: this.clientAuthentication.clientId,
+                        client_secret: this.clientAuthentication.clientSecret || '',
+                    });
+                }
+                else {
+                    throw new Error(`${contentType} content-types are not supported with ` +
+                        `${this.clientAuthentication.confidentialClientType} ` +
+                        'client authentication');
+                }
+            }
+            else {
+                throw new Error(`${method} HTTP method does not support ` +
+                    `${this.clientAuthentication.confidentialClientType} ` +
+                    'client authentication');
+            }
+        }
+    }
+}
+exports.OAuthClientAuthHandler = OAuthClientAuthHandler;
+/**
+ * Converts an OAuth error response to a native JavaScript Error.
+ * @param resp The OAuth error response to convert to a native Error object.
+ * @param err The optional original error. If provided, the error properties
+ *   will be copied to the new error.
+ * @return The converted native Error object.
+ */
+function getErrorFromOAuthErrorResponse(resp, err) {
+    // Error response.
+    const errorCode = resp.error;
+    const errorDescription = resp.error_description;
+    const errorUri = resp.error_uri;
+    let message = `Error code ${errorCode}`;
+    if (typeof errorDescription !== 'undefined') {
+        message += `: ${errorDescription}`;
+    }
+    if (typeof errorUri !== 'undefined') {
+        message += ` - ${errorUri}`;
+    }
+    const newError = new Error(message);
+    // Copy properties from original error to newly generated error.
+    if (err) {
+        const keys = Object.keys(err);
+        if (err.stack) {
+            // Copy error.stack if available.
+            keys.push('stack');
+        }
+        keys.forEach(key => {
+            // Do not overwrite the message field.
+            if (key !== 'message') {
+                Object.defineProperty(newError, key, {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    value: err[key],
+                    writable: false,
+                    enumerable: true,
+                });
+            }
+        });
+    }
+    return newError;
+}
+exports.getErrorFromOAuthErrorResponse = getErrorFromOAuthErrorResponse;
+//# sourceMappingURL=oauth2common.js.map
 
 /***/ }),
 
