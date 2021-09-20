@@ -37,7 +37,7 @@
     "@types/chai-as-promised": "^7.1.4",
     "@types/lodash": "^4.14.173",
     "@types/mocha": "^9.0.0",
-    "@types/node": "^16.9.1",
+    "@types/node": "^16.9.4",
     "@types/sinon": "^10.0.2",
     "@types/uuid": "^8.3.1",
     "@typescript-eslint/eslint-plugin": "^4.31.0",
