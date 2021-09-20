@@ -28,7 +28,7 @@
   "dependencies": {
     "@actions/core": "^1.5.0",
     "fs": "0.0.1-security",
-    "google-auth-library": "^7.9.1",
+    "google-auth-library": "^7.9.2",
     "uuidv4": "^6.2.12"
   },
   "devDependencies": {
@@ -40,7 +40,7 @@
     "@types/node": "^16.9.1",
     "@types/sinon": "^10.0.2",
     "@types/uuid": "^8.3.1",
-    "@typescript-eslint/eslint-plugin": "^4.31.0",
+    "@typescript-eslint/eslint-plugin": "^4.31.2",
     "@typescript-eslint/parser": "^4.31.0",
     "@zeit/ncc": "^0.22.3",
     "chai": "^4.3.4",
