@@ -55,7 +55,7 @@ steps:
 
 - `location`: (Required) Location (Region/Zone) for the cluster.
 
-- `credentials`: (Deprecated) This input is deprecated. See [auth section](https://github.com/google-github-actions/get-gke-credentials#via-google-github-actionsauth) for more details.
+- `credentials`: (**Deprecated**) This input is deprecated. See [auth section](https://github.com/google-github-actions/get-gke-credentials#via-google-github-actionsauth) for more details.
   Service account key to use for authentication. This should be
   the JSON formatted private key which can be exported from the Cloud Console. The
   value can be raw or base64-encoded.
