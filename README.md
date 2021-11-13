@@ -82,7 +82,7 @@ with **at least** the following roles:
 
 ### Via google-github-actions/auth
 
-You can authenticate use [google-github-actions/auth](https://github.com/google-github-actions/auth) directly to the action
+Use [google-github-actions/auth](https://github.com/google-github-actions/auth) to authenticate the action. You can use [Workload Identity Federation][wif] or traditional [Service Account Key JSON][sa] authentication.
 by specifying the `credentials` input. This Action supports both the recommended [Workload Identity Federation][wif]
 based authentication and the traditional [Service Account Key JSON][sa] based auth.
 
