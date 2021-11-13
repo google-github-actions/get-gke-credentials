@@ -36,7 +36,6 @@ steps:
   with:
     workload_identity_provider: 'projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
     service_account: 'my-service-account@my-project.iam.gserviceaccount.com'
-    create_credentials_file: true
 
 - id: get-credentials
   uses: google-github-actions/get-gke-credentials@v0.3.0
@@ -55,17 +54,17 @@ steps:
 
 - `location`: (Required) Location (Region/Zone) for the cluster.
 
-- `credentials`: (**Deprecated**) This input is deprecated. See [auth section](https://github.com/google-github-actions/get-gke-credentials#via-google-github-actionsauth) for more details.
-  Service account key to use for authentication. This should be
-  the JSON formatted private key which can be exported from the Cloud Console. The
-  value can be raw or base64-encoded.
-
 - `project_id`: (Optional) Project ID where the cluster is deployed. If provided, this
   will override the project configured by gcloud.
 
 - `use_auth_provider`: (Optional) Flag to use GCP auth plugin in kubectl instead of a short lived token. Defaults to false.
 
 - `use_internal_ip`: (Optional) Flag to use the internal IP address of the cluster endpoint with private clusters. Defaults to false.
+
+- `credentials`: (**Deprecated**) This input is deprecated. See [auth section](https://github.com/google-github-actions/get-gke-credentials#via-google-github-actionsauth) for more details.
+  Service account key to use for authentication. This should be
+  the JSON formatted private key which can be exported from the Cloud Console. The
+  value can be raw or base64-encoded.
 
 ## Outputs
 
@@ -96,7 +95,6 @@ See [usage](https://github.com/google-github-actions/auth#usage) for more detail
   with:
     workload_identity_provider: 'projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
     service_account: 'my-service-account@my-project.iam.gserviceaccount.com'
-    create_credentials_file: true
 - id: get-credentials
   uses: google-github-actions/get-gke-credentials@v0.3.0
   with:
@@ -112,7 +110,6 @@ See [usage](https://github.com/google-github-actions/auth#usage) for more detail
   uses: google-github-actions/auth@v0.4.0
   with:
     credentials_json: ${{ secrets.gcp_credentials }}
-    create_credentials_file: true
 - id: get-credentials
   uses: google-github-actions/get-gke-credentials@v0.3.0
   with:
