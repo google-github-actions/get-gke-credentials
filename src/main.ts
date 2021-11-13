@@ -32,7 +32,7 @@ async function run(): Promise<void> {
     if (credentials) {
       core.warning(
         '"credentials" input has been deprecated. ' +
-          'Please switch to using google-github-actions/auth which supports both Workload Identity Federation and JSON Key authentication.' +
+          'Please switch to using google-github-actions/auth which supports both Workload Identity Federation and JSON Key authentication. ' +
           'For more details, see https://github.com/google-github-actions/get-gke-credentials#authorization',
       );
     }
