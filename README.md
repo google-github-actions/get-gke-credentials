@@ -31,12 +31,17 @@ This action requires:
 
 ```yaml
 steps:
+- id: auth
+  uses: google-github-actions/auth@v0.4.0
+  with:
+    workload_identity_provider: 'projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
+    service_account: 'my-service-account@my-project.iam.gserviceaccount.com'
+
 - id: get-credentials
-  uses: google-github-actions/get-gke-credentials@main
+  uses: google-github-actions/get-gke-credentials@v0.3.0
   with:
     cluster_name: my-cluster
     location: us-central1-a
-    credentials: ${{ secrets.gcp_credentials }}
 
 # The KUBECONFIG env var is automatically exported and picked up by kubectl.
 - id: get-pods
@@ -49,17 +54,17 @@ steps:
 
 - `location`: (Required) Location (Region/Zone) for the cluster.
 
-- `credentials`: (Optional) Service account key to use for authentication. This should be
-  the JSON formatted private key which can be exported from the Cloud Console. The
-  value can be raw or base64-encoded. Required if not using a the
-  `setup-gcloud` action with exported credentials.
-
 - `project_id`: (Optional) Project ID where the cluster is deployed. If provided, this
   will override the project configured by gcloud.
 
 - `use_auth_provider`: (Optional) Flag to use GCP auth plugin in kubectl instead of a short lived token. Defaults to false.
 
 - `use_internal_ip`: (Optional) Flag to use the internal IP address of the cluster endpoint with private clusters. Defaults to false.
+
+- `credentials`: (**Deprecated**) This input is deprecated. See [auth section](https://github.com/google-github-actions/get-gke-credentials#via-google-github-actionsauth) for more details.
+  Service account key to use for authentication. This should be
+  the JSON formatted private key which can be exported from the Cloud Console. The
+  value can be raw or base64-encoded.
 
 ## Outputs
 
@@ -74,16 +79,38 @@ with **at least** the following roles:
   - Get and list access to GKE Clusters.
 `
 
-### Via Credentials
+### Via google-github-actions/auth
 
-You can provide [Google Cloud Service Account JSON][sa] directly to the action
-by specifying the `credentials` input. First, create a [GitHub
-Secret][gh-secret] that contains the JSON content, then import it into the
-action:
+Use [google-github-actions/auth](https://github.com/google-github-actions/auth) to authenticate the action. You can use [Workload Identity Federation][wif] or traditional [Service Account Key JSON][sa] authentication.
+by specifying the `credentials` input. This Action supports both the recommended [Workload Identity Federation][wif] based authentication and the traditional [Service Account Key JSON][sa] based auth.
+
+See [usage](https://github.com/google-github-actions/auth#usage) for more details.
+
+#### Authenticating via Workload Identity Federation
 
 ```yaml
+- id: auth
+  uses: google-github-actions/auth@v0.4.0
+  with:
+    workload_identity_provider: 'projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
+    service_account: 'my-service-account@my-project.iam.gserviceaccount.com'
 - id: get-credentials
-  uses: google-github-actions/get-gke-credentials@main
+  uses: google-github-actions/get-gke-credentials@v0.3.0
+  with:
+    cluster_name: my-cluster
+    location: us-central1-a
+    credentials: ${{ secrets.gcp_credentials }}
+```
+
+#### Authenticating via Service Account Key JSON
+
+```yaml
+- id: auth
+  uses: google-github-actions/auth@v0.4.0
+  with:
+    credentials_json: ${{ secrets.gcp_credentials }}
+- id: get-credentials
+  uses: google-github-actions/get-gke-credentials@v0.3.0
   with:
     cluster_name: my-cluster
     location: us-central1-a
@@ -99,7 +126,7 @@ only works using a custom runner hosted on GCP.**
 
 ```yaml
 - id: get-credentials
-  uses: google-github-actions/get-gke-credentials@main
+  uses: google-github-actions/get-gke-credentials@v0.3.0
   with:
     cluster_name: my-cluster
     location: us-central1-a
@@ -114,6 +141,7 @@ Credentials.
 [token]: https://kubernetes.io/docs/reference/access-authn-authz/authentication/#openid-connect-tokens
 [sm]: https://cloud.google.com/secret-manager
 [sa]: https://cloud.google.com/iam/docs/creating-managing-service-accounts
+[wif]: https://cloud.google.com/iam/docs/workload-identity-federation
 [gh-runners]: https://help.github.com/en/actions/hosting-your-own-runners/about-self-hosted-runners
 [gh-secret]: https://help.github.com/en/actions/configuring-and-managing-workflows/creating-and-storing-encrypted-secrets
 [setup-gcloud]: ../setup-gcloud

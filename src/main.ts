@@ -28,6 +28,14 @@ async function run(): Promise<void> {
     const authProvider = core.getInput('use_auth_provider');
     const useInternalIp = core.getInput('use_internal_ip');
 
+    // Add warning if using credentials
+    if (credentials) {
+      core.warning(
+        '"credentials" input has been deprecated. ' +
+          'Please switch to using google-github-actions/auth which supports both Workload Identity Federation and JSON Key authentication. ' +
+          'For more details, see https://github.com/google-github-actions/get-gke-credentials#authorization',
+      );
+    }
     // Create Container Cluster client
     const client = new ClusterClient(location, { projectId, credentials });
 
