@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://www.github.com/google-github-actions/get-gke-credentials/compare/v0.3.0...v0.4.0) (2021-11-16)
+
+
+### Features
+
+* add WIF docs, add warning for credentials input ([#141](https://www.github.com/google-github-actions/get-gke-credentials/issues/141)) ([da3398a](https://www.github.com/google-github-actions/get-gke-credentials/commit/da3398a20a039aa74fe3d39007ad64a3fd720c3e))
+
 ## [0.3.0](https://www.github.com/google-github-actions/get-gke-credentials/compare/v0.2.1...v0.3.0) (2021-04-08)
 
 
