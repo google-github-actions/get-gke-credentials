@@ -1,6 +1,6 @@
 {
   "name": "get-gke-credentials",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Get short lived credentials to a GKE cluster",
   "main": "dist/index.js",
   "scripts": {
