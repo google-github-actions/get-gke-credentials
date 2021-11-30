@@ -113,7 +113,6 @@ See [usage](https://github.com/google-github-actions/auth#usage) for more detail
   with:
     cluster_name: my-cluster
     location: us-central1-a
-    credentials: ${{ secrets.gcp_credentials }}
 ```
 
 ### Via Application Default Credentials
