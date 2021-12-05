@@ -120,9 +120,8 @@ See [usage](https://github.com/google-github-actions/auth#usage) for more detail
 
 If you are hosting your own runners, **and** those runners are on Google Cloud,
 you can leverage the Application Default Credentials of the instance. This will
-authenticate requests as the service account attached to the instance and requires
-`GCLOUD_PROJECT` environment variable to be set. **This only works using a custom
-runner hosted on GCP.**
+authenticate requests as the service account attached to the instance. **This
+only works using a custom runner hosted on GCP.**
 
 ```yaml
 - id: get-credentials
