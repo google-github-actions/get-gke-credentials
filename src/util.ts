@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import * as fs from 'fs';
-import path from 'path';
-import { v4 as uuidv4 } from 'uuid';
+import { promises as fs } from 'fs';
+import { join as pathjoin } from 'path';
+import { randomBytes } from 'crypto';
 
 /**
  * Write content to a file
@@ -29,11 +29,18 @@ export async function writeFile(fileContent: string): Promise<string> {
   if (!workspace) {
     throw new Error('Missing GITHUB_WORKSPACE!');
   }
-  const kubeConfigPath = path.join(workspace, uuidv4());
+
+  // Generate a random filename to store the credential. 12 bytes is 24
+  // characters in hex. It's not the ideal entropy, but we have to be under the
+  // 255 character limit for Windows filenames (which includes their entire
+  // leading path).
+  const uniqueName = randomBytes(12).toString('hex');
+  const kubeConfigPath = pathjoin(workspace, uniqueName);
+
   try {
-    await fs.writeFileSync(kubeConfigPath, fileContent);
+    await fs.writeFile(kubeConfigPath, fileContent);
     return kubeConfigPath;
   } catch (err) {
-    throw new Error(`Unable to write kubeconfig to file: ${kubeConfigPath}`);
+    throw new Error(`Failed to write kubeconfig to ${kubeConfigPath}: ${err}`);
   }
 }

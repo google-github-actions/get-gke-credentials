@@ -14,23 +14,29 @@
  * limitations under the License.
  */
 
-import * as core from '@actions/core';
+import {
+  exportVariable,
+  getInput,
+  info as logInfo,
+  setFailed,
+  warning as logWarning,
+} from '@actions/core';
 import { writeFile } from './util';
 import { ClusterClient } from './gkeClient';
 
 async function run(): Promise<void> {
   try {
     // Get inputs
-    const name = core.getInput('cluster_name', { required: true });
-    const location = core.getInput('location', { required: true });
-    const credentials = core.getInput('credentials');
-    const projectId = core.getInput('project_id');
-    const authProvider = core.getInput('use_auth_provider');
-    const useInternalIp = core.getInput('use_internal_ip');
+    const name = getInput('cluster_name', { required: true });
+    const location = getInput('location', { required: true });
+    const credentials = getInput('credentials');
+    const projectId = getInput('project_id');
+    const authProvider = getInput('use_auth_provider');
+    const useInternalIp = getInput('use_internal_ip');
 
     // Add warning if using credentials
     if (credentials) {
-      core.warning(
+      logWarning(
         '"credentials" input has been deprecated. ' +
           'Please switch to using google-github-actions/auth which supports both Workload Identity Federation and JSON Key authentication. ' +
           'For more details, see https://github.com/google-github-actions/get-gke-credentials#authorization',
@@ -43,20 +49,16 @@ async function run(): Promise<void> {
     const cluster = await client.getCluster(name);
 
     // Create KubeConfig
-    const kubeConfig = await client.createKubeConfig(
-      authProvider,
-      useInternalIp,
-      cluster,
-    );
+    const kubeConfig = await client.createKubeConfig(authProvider, useInternalIp, cluster);
 
     // Write kubeconfig to disk
     const kubeConfigPath = await writeFile(kubeConfig);
 
     // Export KUBECONFIG env var with path to kubeconfig
-    core.exportVariable('KUBECONFIG', kubeConfigPath);
-    core.info('Successfully created and exported "KUBECONFIG"');
-  } catch (error) {
-    core.setFailed(error.message);
+    exportVariable('KUBECONFIG', kubeConfigPath);
+    logInfo('Successfully created and exported "KUBECONFIG"');
+  } catch (err) {
+    setFailed(`google-github-actions/get-gke-credentials failed with: ${err}`);
   }
 }
 

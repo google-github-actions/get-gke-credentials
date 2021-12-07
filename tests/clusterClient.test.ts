@@ -62,10 +62,7 @@ describe('Cluster', function () {
   });
 
   it('initializes with ADC', async function () {
-    if (
-      !process.env.GCLOUD_PROJECT ||
-      !process.env.GOOGLE_APPLICATION_CREDENTIALS
-    ) {
+    if (!process.env.GCLOUD_PROJECT || !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
       this.skip();
     }
     const client = new ClusterClient(location);
@@ -110,17 +107,13 @@ describe('Cluster', function () {
       credentials: credentials,
       projectId: project,
     });
-    const kubeconfig = YAML.parse(
-      await client.createKubeConfig('false', 'false', publicCluster),
-    );
+    const kubeconfig = YAML.parse(await client.createKubeConfig('false', 'false', publicCluster));
 
     expect(kubeconfig.clusters[0].name).to.eql(publicCluster.data.name);
     expect(kubeconfig.clusters[0].cluster['certificate-authority-data']).to.eql(
       publicCluster.data.masterAuth.clusterCaCertificate,
     );
-    expect(kubeconfig.clusters[0].cluster.server).to.eql(
-      `https://${publicCluster.data.endpoint}`,
-    );
+    expect(kubeconfig.clusters[0].cluster.server).to.eql(`https://${publicCluster.data.endpoint}`);
     expect(kubeconfig['current-context']).to.eql(publicCluster.data.name);
     expect(kubeconfig.users[0].name).to.eql(publicCluster.data.name);
     expect(kubeconfig.users[0].user.token).to.be.not.null;
@@ -135,17 +128,13 @@ describe('Cluster', function () {
       credentials: credentials,
       projectId: project,
     });
-    const kubeconfig = YAML.parse(
-      await client.createKubeConfig('true', 'false', publicCluster),
-    );
+    const kubeconfig = YAML.parse(await client.createKubeConfig('true', 'false', publicCluster));
 
     expect(kubeconfig.clusters[0].name).to.eql(publicCluster.data.name);
     expect(kubeconfig.clusters[0].cluster['certificate-authority-data']).to.eql(
       publicCluster.data.masterAuth.clusterCaCertificate,
     );
-    expect(kubeconfig.clusters[0].cluster.server).to.eql(
-      `https://${publicCluster.data.endpoint}`,
-    );
+    expect(kubeconfig.clusters[0].cluster.server).to.eql(`https://${publicCluster.data.endpoint}`);
     expect(kubeconfig['current-context']).to.eql(publicCluster.data.name);
     expect(kubeconfig.users[0].name).to.eql(publicCluster.data.name);
     expect(kubeconfig.users[0].user['auth-provider'].name).to.eql('gcp');
@@ -160,9 +149,7 @@ describe('Cluster', function () {
       credentials: credentials,
       projectId: project,
     });
-    const kubeconfig = YAML.parse(
-      await client.createKubeConfig('false', 'true', privateCluster),
-    );
+    const kubeconfig = YAML.parse(await client.createKubeConfig('false', 'true', privateCluster));
 
     expect(kubeconfig.clusters[0].name).to.eql(privateCluster.data.name);
     expect(kubeconfig.clusters[0].cluster['certificate-authority-data']).to.eql(
@@ -185,9 +172,7 @@ describe('Cluster', function () {
       credentials: credentials,
       projectId: project,
     });
-    const kubeconfig = YAML.parse(
-      await client.createKubeConfig('true', 'true', privateCluster),
-    );
+    const kubeconfig = YAML.parse(await client.createKubeConfig('true', 'true', privateCluster));
 
     expect(kubeconfig.clusters[0].name).to.eql(privateCluster.data.name);
     expect(kubeconfig.clusters[0].cluster['certificate-authority-data']).to.eql(

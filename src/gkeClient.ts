@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as core from '@actions/core';
+import { info as logInfo } from '@actions/core';
 import {
   GoogleAuth,
   JWT,
@@ -24,6 +24,10 @@ import {
   BaseExternalAccountClient,
 } from 'google-auth-library';
 import YAML from 'yaml';
+
+// Do not listen to the linter - this can NOT be rewritten as an ES6 import statement.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { version: appVersion } = require('../package.json');
 
 /**
  * Available options to create the client.
@@ -45,7 +49,7 @@ type ClientOptions = {
  */
 export class ClusterClient {
   readonly defaultEndpoint = 'https://container.googleapis.com/v1';
-  readonly userAgent = 'github-actions-get-gke-credentials/0.1.0';
+  readonly userAgent = `github-actions-get-gke-credentials/${appVersion}`;
   readonly auth: GoogleAuth;
   readonly parent: string;
   authClient:
@@ -60,8 +64,7 @@ export class ClusterClient {
     let projectId = opts?.projectId;
     if (
       !opts?.credentials &&
-      (!process.env.GCLOUD_PROJECT ||
-        !process.env.GOOGLE_APPLICATION_CREDENTIALS)
+      (!process.env.GCLOUD_PROJECT || !process.env.GOOGLE_APPLICATION_CREDENTIALS)
     ) {
       throw new Error(
         'No method for authentication. Set credentials in this action or export credentials from the setup-gcloud action',
@@ -89,10 +92,10 @@ export class ClusterClient {
     // Set project Id
     if (!projectId && jsonContent && jsonContent.project_id) {
       projectId = jsonContent.project_id;
-      core.info('Setting project Id from credentials');
+      logInfo('Setting project Id from credentials');
     } else if (!projectId && process.env.GCLOUD_PROJECT) {
       projectId = process.env.GCLOUD_PROJECT;
-      core.info('Setting project Id from $GCLOUD_PROJECT');
+      logInfo('Setting project Id from $GCLOUD_PROJECT');
     } else if (!projectId) {
       throw new Error('No project Id found. Set project Id in this action.');
     }
@@ -181,8 +184,7 @@ export class ClusterClient {
       'clusters': [
         {
           cluster: {
-            'certificate-authority-data':
-              cluster.data.masterAuth?.clusterCaCertificate,
+            'certificate-authority-data': cluster.data.masterAuth?.clusterCaCertificate,
             'server': `https://${endpoint}`,
           },
           name: cluster.data.name,
