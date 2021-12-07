@@ -61,6 +61,14 @@ describe('Cluster', function () {
     expect(client.auth.jsonContent).eql({ foo: 'bar' });
   });
 
+  it('initializes with base64 JSON creds', function () {
+    const client = new ClusterClient(location, {
+      credentials: Buffer.from(`{"foo":"bar"}`).toString('base64'),
+      projectId: 'test',
+    });
+    expect(client.auth.jsonContent).eql({ foo: 'bar' });
+  });
+
   it('initializes with ADC', async function () {
     if (!process.env.GCLOUD_PROJECT || !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
       this.skip();

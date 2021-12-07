@@ -1,41 +1,47 @@
-name: get-gke-credentials Unit
+name: 'unit'
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+    - 'main'
+  pull_request:
+    branches:
+    - 'main'
 
 concurrency:
-  group: '${{ github.head_ref || github.ref }}-unit'
+  group: '${{ github.workflow }}-${{ github.head_ref || github.ref }}'
   cancel-in-progress: true
 
 jobs:
   run:
-    name: test
-    runs-on: ${{ matrix.operating-system }}
+    name: 'unit'
+    runs-on: '${{ matrix.os }}'
     strategy:
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macos-latest]
+        os:
+        - 'ubuntu-latest'
+        - 'windows-latest'
+        - 'macos-latest'
     steps:
-    - uses: actions/checkout@v2
+    - uses: 'actions/checkout@v2'
 
-    - uses: actions/setup-node@master
+    - uses: 'actions/setup-node@v2'
       with:
-        node-version: 12.x
+        node-version: '12.x'
 
-    - name: npm install
-      run: npm install
+    - name: 'npm build'
+      run: 'npm ci && npm run build'
 
-    - name: npm lint
-      run: npm run lint
+    - name: 'npm lint'
+      # There's no need to run the linter for each operating system, since it
+      # will find the same thing 3x and clog up the PR review.
+      if: ${{matrix.os == 'ubuntu-latest'}}
+      run: 'npm run lint'
 
-    - uses: google-github-actions/setup-gcloud@master
-      with:
-        service_account_key: ${{ secrets.GET_GKE_CRED_SA_KEY_JSON }}
-        export_default_credentials: true
-    - name: npm test
-      run: npm run test
+    - name: 'npm test'
       env:
-        GET_GKE_CRED_SA_KEY_JSON: ${{ secrets.GET_GKE_CRED_SA_KEY_JSON }}
-        GET_GKE_CRED_PROJECT: ${{ secrets.GET_GKE_CRED_PROJECT }}
-        GET_GKE_CRED_CLUSTER_NAME: ${{ secrets.GET_GKE_CRED_CLUSTER_NAME }}
-        GKE_AUTH_CLUSTER_LOCATION: ${{ secrets.GKE_AUTH_CLUSTER_LOCATION }}
-    - name: npm build
-      run: npm run build
+        GET_GKE_CRED_SA_KEY_JSON: '${{ secrets.GET_GKE_CRED_SA_KEY_JSON }}'
+        GET_GKE_CRED_PROJECT: '${{ secrets.GET_GKE_CRED_PROJECT }}'
+        GET_GKE_CRED_CLUSTER_NAME: '${{ secrets.GET_GKE_CRED_CLUSTER_NAME }}'
+        GKE_AUTH_CLUSTER_LOCATION: '${{ secrets.GKE_AUTH_CLUSTER_LOCATION }}'
+      run: 'npm run test'
