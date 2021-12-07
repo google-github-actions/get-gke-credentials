@@ -14,51 +14,42 @@
  * limitations under the License.
  */
 
-import * as chai from 'chai';
-import chaiAsPromised from 'chai-as-promised';
+import { expect } from 'chai';
 import 'mocha';
-import * as sinon from 'sinon';
 
 import fs from 'fs';
-import path from 'path';
 import { writeFile } from '../src/util';
-import crypto from 'crypto';
 import os from 'os';
 
-chai.use(chaiAsPromised);
-const { expect } = chai;
-
 describe('writeFile', function () {
-  beforeEach(async function () {
-    // stub fs writeFileSync method
-    this.writeFileSyncStub = sinon.stub(fs, 'writeFileSync');
-    // populate GITHUB_WORKSPACE with temp dir
-    const githubWorkspace = path.join(os.tmpdir(), crypto.randomBytes(12).toString('hex'));
-    this.envStub = sinon.stub(process, 'env').value({
-      GITHUB_WORKSPACE: fs.mkdtempSync(githubWorkspace),
-    });
-  });
-
-  afterEach(async function () {
-    sinon.restore();
-  });
-
   it('writes to file', async function () {
-    const filePath = await writeFile('test');
-    // writeFileSync was called with correct path
-    expect(filePath).to.be.contain(process.env.GITHUB_WORKSPACE);
-    // writeFileSync was called once to write string`test`
-    expect(this.writeFileSyncStub.callCount).eq(1);
-    expect(this.writeFileSyncStub.getCalls()[0].args[1]).eql('test');
+    const githubWorkspace = os.tmpdir();
+    process.env.GITHUB_WORKSPACE = githubWorkspace;
+
+    const pth = await writeFile('test content');
+    expect(fs.existsSync(pth)).to.be.true;
+    expect(fs.readFileSync(pth).toString('utf8')).to.eq('test content');
   });
 
-  it('throws an error if GITHUB_WORKSPACE is not set', async function () {
-    this.envStub.value({});
-    expect(writeFile('test')).to.eventually.be.rejectedWith('Missing GITHUB_WORKSPACE!');
+  it('throws an error if GITHUB_WORKSPACE is not set', async () => {
+    delete process.env.GITHUB_WORKSPACE;
+
+    try {
+      await writeFile('test content');
+      throw new Error('should have thrown an error');
+    } catch (err) {
+      expect(`${err}`).to.include('Missing GITHUB_WORKSPACE!');
+    }
   });
 
-  it('throws an error if unable to write to file', async function () {
-    this.writeFileSyncStub.throws();
-    expect(writeFile('test')).to.eventually.be.rejectedWith(/Unable to write kubeconfig to file:/);
+  it('throws an error if unable to write to file', async () => {
+    process.env.GITHUB_WORKSPACE = '/totally/not/a/real/path';
+
+    try {
+      await writeFile('test content');
+      throw new Error('should have thrown an error');
+    } catch (err) {
+      expect(`${err}`).to.include('Failed to write kubeconfig');
+    }
   });
 });

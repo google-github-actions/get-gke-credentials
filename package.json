@@ -33,11 +33,9 @@
   "devDependencies": {
     "@kubernetes/client-node": "^0.16.1",
     "@types/chai": "^4.2.22",
-    "@types/chai-as-promised": "^7.1.4",
     "@types/lodash": "^4.14.177",
     "@types/mocha": "^9.0.0",
     "@types/node": "^16.11.11",
-    "@types/sinon": "^10.0.6",
     "@types/uuid": "^8.3.3",
     "@typescript-eslint/eslint-plugin": "^5.6.0",
     "@typescript-eslint/parser": "^5.6.0",
