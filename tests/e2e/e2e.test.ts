@@ -24,6 +24,7 @@ describe('E2E tests', function () {
       throw Error('KUBECONFIG not found.');
     }
   });
+
   it('can connect to cluster', async function () {
     const config = new KubeConfig();
     config.loadFromDefault();

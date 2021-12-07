@@ -1,150 +1,136 @@
-name: get-gke-credentials Integration
+name: 'integration'
 
 on:
   push:
     branches:
     - 'main'
   pull_request:
+    branches:
+    - 'main'
 
 concurrency:
-  group: '${{ github.head_ref || github.ref }}-it'
+  group: '${{ github.workflow }}-${{ github.head_ref || github.ref }}'
   cancel-in-progress: true
 
 jobs:
-  gcloud:
+  auth_workload_identity_federation:
     if: ${{ github.event_name == 'push' || github.repository == github.event.pull_request.head.repo.full_name && github.actor != 'dependabot[bot]' }}
-    name: with setup-gcloud & kubectl
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: google-github-actions/setup-gcloud@master # Set up ADC for credentials
-      with:
-        service_account_key: ${{ secrets.GET_GKE_CRED_SA_KEY_JSON }}
-        export_default_credentials: true
-    - id: build
-      name: Build dist
-      run: |-
-        npm install
-        npm run build
-    - id: get-kubeconfig
-      uses: ./
-      with:
-        project_id: ${{ secrets.GET_GKE_CRED_PROJECT }}
-        cluster_name: ${{ secrets.GET_GKE_CRED_CLUSTER_NAME }}
-        location: ${{ secrets.GET_GKE_CRED_CLUSTER_LOCATION }}
-        use_auth_provider: true
-    - name: test-kubectl # Use kubectl with the generated kubeconfig to auth and list pods. There should be no pods in the default ns.
-      run: |
-        pods=$(kubectl get pods -o=jsonpath='{$.items[*]}')
-        if [ -n "$pods" ]
-        then
-            echo "Expected no pods. Got ${pods}"
-            exit 1
-        fi
-
-  base64:
-    if: ${{ github.event_name == 'push' || github.repository == github.event.pull_request.head.repo.full_name && github.actor != 'dependabot[bot]' }}
-    name: with base64 creds & API
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - id: build
-      name: Build dist
-      run: |-
-        npm install
-        npm run build
-    - id: get-kubeconfig
-      uses: ./
-      with:
-        project_id: ${{ secrets.GET_GKE_CRED_PROJECT }}
-        credentials: ${{ secrets.GET_GKE_CRED_SA_KEY_B64 }}
-        cluster_name: ${{ secrets.GET_GKE_CRED_CLUSTER_NAME }}
-        location: ${{ secrets.GET_GKE_CRED_CLUSTER_LOCATION }}
-    - uses: actions/setup-node@master
-      with:
-        node-version: 12.x
-    - run: npm install
-    - name: integration tests
-      run: npm run e2e-tests
-
-  json-api:
-    if: ${{ github.event_name == 'push' || github.repository == github.event.pull_request.head.repo.full_name && github.actor != 'dependabot[bot]' }}
-    name: with json creds & API
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - id: build
-      name: Build dist
-      run: |-
-        npm install
-        npm run build
-    - id: get-kubeconfig
-      uses: ./
-      with:
-        project_id: ${{ secrets.GET_GKE_CRED_PROJECT }}
-        credentials: ${{ secrets.GET_GKE_CRED_SA_KEY_JSON }}
-        cluster_name: ${{ secrets.GET_GKE_CRED_CLUSTER_NAME }}
-        location: ${{ secrets.GET_GKE_CRED_CLUSTER_LOCATION }}
-    - run: npm install
-    - name: integration tests
-      run: npm run e2e-tests
-
-  json-kubectl:
-    if: ${{ github.event_name == 'push' || github.repository == github.event.pull_request.head.repo.full_name && github.actor != 'dependabot[bot]' }}
-    name: with json creds & kubectl
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - id: build
-      name: Build dist
-      run: |-
-        npm install
-        npm run build
-    - id: get-kubeconfig
-      uses: ./
-      with:
-        project_id: ${{ secrets.GET_GKE_CRED_PROJECT }}
-        credentials: ${{ secrets.GET_GKE_CRED_SA_KEY_JSON }}
-        cluster_name: ${{ secrets.GET_GKE_CRED_CLUSTER_NAME }}
-        location: ${{ secrets.GET_GKE_CRED_CLUSTER_LOCATION }}
-    - name: test-kubectl # Use kubectl with the generated kubeconfig to auth and list pods. There should be no pods in the default ns.
-      run: |
-        pods=$(kubectl get pods -o=jsonpath='{$.items[*]}')
-        if [ -n "$pods" ]
-        then
-            echo "Expected no pods. Got ${pods}"
-            exit 1
-        fi
-
-  wif:
+    name: 'auth_workload_identity_federation'
     permissions:
       contents: 'read'
       id-token: 'write'
-    if: ${{ github.event_name == 'push' || github.repository == github.event.pull_request.head.repo.full_name && github.actor != 'dependabot[bot]' }}
-    name: with wif
-    runs-on: ubuntu-latest
+    runs-on: 'ubuntu-latest'
     steps:
-    - uses: actions/checkout@v2
-    - uses: google-github-actions/auth@main
+    - uses: 'actions/checkout@v2'
+
+    - uses: 'actions/setup-node@v2'
       with:
-        workload_identity_provider: ${{ secrets.WIF_PROVIDER_NAME }}
-        service_account: ${{ secrets.GET_GKE_CRED_SA_EMAIL }}
-    - id: build
-      name: Build dist
+        node-version: '12.x'
+
+    - name: 'npm build'
+      run: 'npm ci && npm run build'
+
+    - uses: 'google-github-actions/auth@main'
+      with:
+        workload_identity_provider: '${{ secrets.WIF_PROVIDER_NAME }}'
+        service_account: '${{ secrets.GET_GKE_CRED_SA_EMAIL }}'
+
+    - name: 'get-gke-credentials'
+      uses: './'
+      with:
+        project_id: '${{ secrets.GET_GKE_CRED_PROJECT }}'
+        cluster_name: '${{ secrets.GET_GKE_CRED_CLUSTER_NAME }}'
+        location: '${{ secrets.GET_GKE_CRED_CLUSTER_LOCATION }}'
+
+    - name: 'npm e2e-tests'
+      run: 'npm run e2e-tests'
+
+    # Use kubectl with the generated kubeconfig to auth and list pods. There
+    # should be no pods in the default namespace.
+    - name: 'kubectl'
       run: |-
-        npm install
-        npm run build
-    - id: get-kubeconfig
-      uses: ./
-      with:
-        project_id: ${{ secrets.GET_GKE_CRED_PROJECT }}
-        cluster_name: ${{ secrets.GET_GKE_CRED_CLUSTER_NAME }}
-        location: ${{ secrets.GET_GKE_CRED_CLUSTER_LOCATION }}
-    - name: test-kubectl # Use kubectl with the generated kubeconfig to auth and list pods. There should be no pods in the default ns.
-      run: |
+        set -eEuo pipefail
+
         pods=$(kubectl get pods -o=jsonpath='{$.items[*]}')
-        if [ -n "$pods" ]
-        then
-            echo "Expected no pods. Got ${pods}"
-            exit 1
+        if [ -n "$pods" ]; then
+          echo "Expected no pods. Got ${pods}"
+          exit 1
+        fi
+
+  auth_credentials:
+    if: ${{ github.event_name == 'push' || github.repository == github.event.pull_request.head.repo.full_name && github.actor != 'dependabot[bot]' }}
+    name: 'auth_credentials'
+    runs-on: 'ubuntu-latest'
+    steps:
+    - uses: 'actions/checkout@v2'
+
+    - uses: 'actions/setup-node@v2'
+      with:
+        node-version: '12.x'
+
+    - name: 'npm build'
+      run: 'npm ci && npm run build'
+
+    - uses: 'google-github-actions/auth@main'
+      with:
+        credentials_json: '${{ secrets.GET_GKE_CRED_SA_KEY_JSON }}'
+
+    - name: 'get-gke-credentials'
+      uses: './'
+      with:
+        project_id: '${{ secrets.GET_GKE_CRED_PROJECT }}'
+        cluster_name: '${{ secrets.GET_GKE_CRED_CLUSTER_NAME }}'
+        location: '${{ secrets.GET_GKE_CRED_CLUSTER_LOCATION }}'
+
+    - name: 'npm e2e-tests'
+      run: 'npm run e2e-tests'
+
+    # Use kubectl with the generated kubeconfig to auth and list pods. There
+    # should be no pods in the default namespace.
+    - name: 'kubectl'
+      run: |-
+        set -eEuo pipefail
+
+        pods=$(kubectl get pods -o=jsonpath='{$.items[*]}')
+        if [ -n "$pods" ]; then
+          echo "Expected no pods. Got ${pods}"
+          exit 1
+        fi
+
+  # Deprecated
+  json:
+    if: ${{ github.event_name == 'push' || github.repository == github.event.pull_request.head.repo.full_name && github.actor != 'dependabot[bot]' }}
+    name: 'json'
+    runs-on: 'ubuntu-latest'
+    steps:
+    - uses: 'actions/checkout@v2'
+
+    - uses: 'actions/setup-node@v2'
+      with:
+        node-version: '12.x'
+
+    - name: 'npm build'
+      run: 'npm ci && npm run build'
+
+    - name: 'get-gke-credentials'
+      uses: './'
+      with:
+        credentials: '${{ secrets.GET_GKE_CRED_SA_KEY_JSON }}'
+        project_id: '${{ secrets.GET_GKE_CRED_PROJECT }}'
+        cluster_name: '${{ secrets.GET_GKE_CRED_CLUSTER_NAME }}'
+        location: '${{ secrets.GET_GKE_CRED_CLUSTER_LOCATION }}'
+
+    - name: 'npm e2e-tests'
+      run: 'npm run e2e-tests'
+
+    # Use kubectl with the generated kubeconfig to auth and list pods. There
+    # should be no pods in the default namespace.
+    - name: 'kubectl'
+      run: |-
+        set -eEuo pipefail
+
+        pods=$(kubectl get pods -o=jsonpath='{$.items[*]}')
+        if [ -n "$pods" ]; then
+          echo "Expected no pods. Got ${pods}"
+          exit 1
         fi
