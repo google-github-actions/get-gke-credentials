@@ -21,8 +21,8 @@ import * as sinon from 'sinon';
 
 import fs from 'fs';
 import path from 'path';
-import { v4 as uuidv4 } from 'uuid';
 import { writeFile } from '../src/util';
+import crypto from 'crypto';
 import os from 'os';
 
 chai.use(chaiAsPromised);
@@ -33,8 +33,9 @@ describe('writeFile', function () {
     // stub fs writeFileSync method
     this.writeFileSyncStub = sinon.stub(fs, 'writeFileSync');
     // populate GITHUB_WORKSPACE with temp dir
+    const githubWorkspace = path.join(os.tmpdir(), crypto.randomBytes(12).toString('hex'));
     this.envStub = sinon.stub(process, 'env').value({
-      GITHUB_WORKSPACE: fs.mkdtempSync(path.join(os.tmpdir(), uuidv4())),
+      GITHUB_WORKSPACE: fs.mkdtempSync(githubWorkspace),
     });
   });
 
@@ -53,15 +54,11 @@ describe('writeFile', function () {
 
   it('throws an error if GITHUB_WORKSPACE is not set', async function () {
     this.envStub.value({});
-    expect(writeFile('test')).to.eventually.be.rejectedWith(
-      'Missing GITHUB_WORKSPACE!',
-    );
+    expect(writeFile('test')).to.eventually.be.rejectedWith('Missing GITHUB_WORKSPACE!');
   });
 
   it('throws an error if unable to write to file', async function () {
     this.writeFileSyncStub.throws();
-    expect(writeFile('test')).to.eventually.be.rejectedWith(
-      /Unable to write kubeconfig to file:/,
-    );
+    expect(writeFile('test')).to.eventually.be.rejectedWith(/Unable to write kubeconfig to file:/);
   });
 });
