@@ -33,7 +33,7 @@
   "devDependencies": {
     "@kubernetes/client-node": "^0.16.1",
     "@types/chai": "^4.2.22",
-    "@types/lodash": "^4.14.177",
+    "@types/lodash": "^4.14.178",
     "@types/mocha": "^9.0.0",
     "@types/node": "^16.11.11",
     "@types/uuid": "^8.3.3",
