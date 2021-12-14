@@ -14,7 +14,7 @@
 
 name: Get GKE Credentials
 description: |-
-  Use this action to authenticate to a GKE cluster by generating 
+  Use this action to authenticate to a GKE cluster by generating
   an emphemeral kubeconfig to use with kubectl, helm etc.
 author: Google LLC
 
@@ -25,7 +25,7 @@ inputs:
       formatted private key which can be exported from the Cloud Console. The
       value can be raw or base64-encoded.
     required: false
-    
+
   cluster_name:
     description: |-
       Name of the cluster to get credentials for.
@@ -38,19 +38,28 @@ inputs:
 
   project_id:
     description: |-
-      Project ID where the cluster is deployed. If provided, this will override the project configured by gcloud.
+      Project ID where the cluster is deployed. If provided, this will override
+      the project configured by previous steps or environment variables.
     required: false
 
   use_auth_provider:
     description: |-
-      Flag to use GCP auth plugin in kubectl instead of a short lived token. Defaults to false.
-    required: false
-    
-  use_internal_ip:
-    description: |-
-      Flag to use the internal IP address of the cluster endpoint (for use with Private GKE clusters).
+      Flag to use GCP auth plugin in kubectl instead of a short lived token.
+      Defaults to false.
+    default: false
     required: false
 
+  use_internal_ip:
+    description: |-
+      Flag to use the internal IP address of the cluster endpoint (for use with
+      Private GKE clusters).
+    default: false
+    required: false
+
+branding:
+  icon: 'lock'
+  color: 'blue'
+
 runs:
-  using: "node12"
-  main: "dist/index.js"
+  using: 'node12'
+  main: 'dist/index.js'

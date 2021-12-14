@@ -16,6 +16,7 @@
 
 import {
   exportVariable,
+  getBooleanInput,
   getInput,
   info as logInfo,
   setFailed,
@@ -31,8 +32,8 @@ async function run(): Promise<void> {
     const location = getInput('location', { required: true });
     const credentials = getInput('credentials');
     const projectId = getInput('project_id');
-    const authProvider = getInput('use_auth_provider');
-    const useInternalIp = getInput('use_internal_ip');
+    const useAuthProvider = getBooleanInput('use_auth_provider');
+    const useInternalIP = getBooleanInput('use_internal_ip');
 
     // Add warning if using credentials
     if (credentials) {
@@ -46,10 +47,14 @@ async function run(): Promise<void> {
     const client = new ClusterClient(location, { projectId, credentials });
 
     // Get Cluster object
-    const cluster = await client.getCluster(name);
+    const clusterData = await client.getCluster(name);
 
     // Create KubeConfig
-    const kubeConfig = await client.createKubeConfig(authProvider, useInternalIp, cluster);
+    const kubeConfig = await client.createKubeConfig({
+      useAuthProvider: useAuthProvider,
+      useInternalIP: useInternalIP,
+      clusterData: clusterData,
+    });
 
     // Write kubeconfig to disk
     const kubeConfigPath = await writeFile(kubeConfig);
