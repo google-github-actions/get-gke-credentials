@@ -115,7 +115,13 @@ describe('Cluster', function () {
       credentials: credentials,
       projectId: project,
     });
-    const kubeconfig = YAML.parse(await client.createKubeConfig('false', 'false', publicCluster));
+    const kubeconfig = YAML.parse(
+      await client.createKubeConfig({
+        useAuthProvider: false,
+        useInternalIP: false,
+        clusterData: publicCluster,
+      }),
+    );
 
     expect(kubeconfig.clusters[0].name).to.eql(publicCluster.data.name);
     expect(kubeconfig.clusters[0].cluster['certificate-authority-data']).to.eql(
@@ -136,7 +142,13 @@ describe('Cluster', function () {
       credentials: credentials,
       projectId: project,
     });
-    const kubeconfig = YAML.parse(await client.createKubeConfig('true', 'false', publicCluster));
+    const kubeconfig = YAML.parse(
+      await client.createKubeConfig({
+        useAuthProvider: true,
+        useInternalIP: false,
+        clusterData: publicCluster,
+      }),
+    );
 
     expect(kubeconfig.clusters[0].name).to.eql(publicCluster.data.name);
     expect(kubeconfig.clusters[0].cluster['certificate-authority-data']).to.eql(
@@ -157,7 +169,13 @@ describe('Cluster', function () {
       credentials: credentials,
       projectId: project,
     });
-    const kubeconfig = YAML.parse(await client.createKubeConfig('false', 'true', privateCluster));
+    const kubeconfig = YAML.parse(
+      await client.createKubeConfig({
+        useAuthProvider: false,
+        useInternalIP: true,
+        clusterData: privateCluster,
+      }),
+    );
 
     expect(kubeconfig.clusters[0].name).to.eql(privateCluster.data.name);
     expect(kubeconfig.clusters[0].cluster['certificate-authority-data']).to.eql(
@@ -180,7 +198,13 @@ describe('Cluster', function () {
       credentials: credentials,
       projectId: project,
     });
-    const kubeconfig = YAML.parse(await client.createKubeConfig('true', 'true', privateCluster));
+    const kubeconfig = YAML.parse(
+      await client.createKubeConfig({
+        useAuthProvider: true,
+        useInternalIP: true,
+        clusterData: privateCluster,
+      }),
+    );
 
     expect(kubeconfig.clusters[0].name).to.eql(privateCluster.data.name);
     expect(kubeconfig.clusters[0].cluster['certificate-authority-data']).to.eql(

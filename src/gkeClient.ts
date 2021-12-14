@@ -162,23 +162,16 @@ export class ClusterClient {
   /**
    * Create kubeconfig for cluster.
    *
-   * @param authProvider boolean to use short lived OIDC token or GCP auth plugin in kubectl.
-   * @param useInternalIp boolean to use the internal IP address of the cluster endpoint.
-   * @returns kubeconfig
+   * @param opts Input options. See CreateKubeConfigOptions.
    */
-  async createKubeConfig(
-    authProvider: string,
-    useInternalIp: string,
-    cluster: ClusterResponse,
-  ): Promise<string> {
-    const endpoint =
-      String(useInternalIp).toLowerCase() === 'true'
-        ? cluster.data.privateClusterConfig.privateEndpoint
-        : cluster.data.endpoint;
-    const auth =
-      String(authProvider).toLowerCase() === 'true'
-        ? { user: { 'auth-provider': { name: 'gcp' } } }
-        : { user: { token: await this.getToken() } };
+  async createKubeConfig(opts: CreateKubeConfigOptions): Promise<string> {
+    const cluster = opts.clusterData;
+    const endpoint = opts.useInternalIP
+      ? cluster.data.privateClusterConfig.privateEndpoint
+      : cluster.data.endpoint;
+    const auth = opts.useAuthProvider
+      ? { user: { 'auth-provider': { name: 'gcp' } } }
+      : { user: { token: await this.getToken() } };
     const kubeConfig: KubeConfig = {
       'apiVersion': 'v1',
       'clusters': [
@@ -221,6 +214,19 @@ type context = {
     user: string;
   };
   name: string;
+};
+
+export type CreateKubeConfigOptions = {
+  // useAuthProvider is a boolean to use short lived OIDC token or GCP auth
+  // plugin in kubectl.
+  useAuthProvider: boolean;
+
+  // useInternalIP is a boolean to use the internal IP address of the cluster
+  // endpoint.
+  useInternalIP: boolean;
+
+  // clusterData is the cluster response data.
+  clusterData: ClusterResponse;
 };
 
 export type KubeConfig = {
