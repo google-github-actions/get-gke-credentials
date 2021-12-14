@@ -30,22 +30,28 @@ This action requires:
 ## Usage
 
 ```yaml
-steps:
-- id: auth
-  uses: google-github-actions/auth@v0.4.0
-  with:
-    workload_identity_provider: 'projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
-    service_account: 'my-service-account@my-project.iam.gserviceaccount.com'
+jobs:
+  job_id:
+    permissions:
+      contents: 'read'
+      id-token: 'write'
 
-- id: get-credentials
-  uses: google-github-actions/get-gke-credentials@v0.3.0
-  with:
-    cluster_name: my-cluster
-    location: us-central1-a
+    steps:
+    - id: 'auth'
+      uses: 'google-github-actions/auth@v0'
+      with:
+        workload_identity_provider: 'projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
+        service_account: 'my-service-account@my-project.iam.gserviceaccount.com'
 
-# The KUBECONFIG env var is automatically exported and picked up by kubectl.
-- id: get-pods
-  run: kubectl get pods
+    - id: 'get-credentials'
+      uses: 'google-github-actions/get-gke-credentials@v0'
+      with:
+        cluster_name: 'my-cluster'
+        location: 'us-central1-a'
+
+    # The KUBECONFIG env var is automatically exported and picked up by kubectl.
+    - id: 'get-pods'
+      run: 'kubectl get pods'
 ```
 
 ## Inputs
@@ -89,30 +95,42 @@ See [usage](https://github.com/google-github-actions/auth#usage) for more detail
 #### Authenticating via Workload Identity Federation
 
 ```yaml
-- id: auth
-  uses: google-github-actions/auth@v0.4.0
-  with:
-    workload_identity_provider: 'projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
-    service_account: 'my-service-account@my-project.iam.gserviceaccount.com'
-- id: get-credentials
-  uses: google-github-actions/get-gke-credentials@v0.3.0
-  with:
-    cluster_name: my-cluster
-    location: us-central1-a
+jobs:
+  job_id:
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+    - id: 'auth'
+      uses: 'google-github-actions/auth@v0'
+      with:
+        workload_identity_provider: 'projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
+        service_account: 'my-service-account@my-project.iam.gserviceaccount.com'
+
+    - id: 'get-credentials'
+      uses: 'google-github-actions/get-gke-credentials@v0'
+      with:
+        cluster_name: 'my-cluster'
+        location: 'us-central1-a'
 ```
 
 #### Authenticating via Service Account Key JSON
 
 ```yaml
-- id: auth
-  uses: google-github-actions/auth@v0.4.0
-  with:
-    credentials_json: ${{ secrets.gcp_credentials }}
-- id: get-credentials
-  uses: google-github-actions/get-gke-credentials@v0.3.0
-  with:
-    cluster_name: my-cluster
-    location: us-central1-a
+jobs:
+  job_id:
+    steps:
+    - id: 'auth'
+      uses: 'google-github-actions/auth@v0'
+      with:
+        credentials_json: '${{ secrets.gcp_credentials }}'
+
+    - id: 'get-credentials'
+      uses: 'google-github-actions/get-gke-credentials@v0'
+      with:
+        cluster_name: 'my-cluster'
+        location: 'us-central1-a'
 ```
 
 ### Via Application Default Credentials
@@ -123,11 +141,14 @@ authenticate requests as the service account attached to the instance. **This
 only works using a custom runner hosted on GCP.**
 
 ```yaml
-- id: get-credentials
-  uses: google-github-actions/get-gke-credentials@v0.3.0
-  with:
-    cluster_name: my-cluster
-    location: us-central1-a
+jobs:
+  job_id:
+    steps:
+    - id: 'get-credentials'
+      uses: 'google-github-actions/get-gke-credentials@v0'
+      with:
+        cluster_name: 'my-cluster'
+        location: 'us-central1-a'
 ```
 
 The action will automatically detect and use the Application Default
