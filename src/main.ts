@@ -37,11 +37,14 @@ async function run(): Promise<void> {
   try {
     // Get inputs
     let projectID = getInput('project_id');
-    const location = getInput('location');
-    const name = getInput('cluster_name', { required: true });
+    let location = getInput('location');
+    const clusterName = ClusterClient.parseResourceName(
+      getInput('cluster_name', { required: true }),
+    );
     const credentials = getInput('credentials');
     const useAuthProvider = getBooleanInput('use_auth_provider');
     const useInternalIP = getBooleanInput('use_internal_ip');
+    let contextName = getInput('context_name');
 
     // Add warning if using credentials
     let credentialsJSON: ServiceAccountKey | ExternalAccountClientOptions | undefined;
@@ -57,13 +60,40 @@ async function run(): Promise<void> {
 
     // Pick the best project ID.
     if (!projectID) {
-      if (credentialsJSON && isServiceAccountKey(credentialsJSON)) {
+      if (clusterName.projectID) {
+        projectID = clusterName.projectID;
+        logInfo(`Extracted projectID "${projectID}" from cluster resource name`);
+      } else if (credentialsJSON && isServiceAccountKey(credentialsJSON)) {
         projectID = credentialsJSON?.project_id;
-        logInfo(`Extracted project ID '${projectID}' from credentials JSON`);
+        logInfo(`Extracted project ID "${projectID}" from credentials JSON`);
       } else if (process.env?.GCLOUD_PROJECT) {
         projectID = process.env.GCLOUD_PROJECT;
-        logInfo(`Extracted project ID '${projectID}' from $GCLOUD_PROJECT`);
+        logInfo(`Extracted project ID "${projectID}" from $GCLOUD_PROJECT`);
+      } else {
+        throw new Error(
+          `Failed to extract project ID, please set the "project_id" input, ` +
+            `set $GCLOUD_PROJECT, or specify the cluster name as a full ` +
+            `resource name.`,
+        );
       }
+    }
+
+    // Pick the best location.
+    if (!location) {
+      if (clusterName.location) {
+        location = clusterName.location;
+        logInfo(`Extracted location "${location}" from cluster resource name`);
+      } else {
+        throw new Error(
+          `Failed to extract location, please set the "location" input or ` +
+            `specify the cluster name as a full resource name.`,
+        );
+      }
+    }
+
+    // Pick the best context name.
+    if (!contextName) {
+      contextName = `gke_${projectID}_${location}_${clusterName.id}`;
     }
 
     // Create Container Cluster client
@@ -74,13 +104,14 @@ async function run(): Promise<void> {
     });
 
     // Get Cluster object
-    const clusterData = await client.getCluster(name);
+    const clusterData = await client.getCluster(clusterName.id);
 
     // Create KubeConfig
     const kubeConfig = await client.createKubeConfig({
       useAuthProvider: useAuthProvider,
       useInternalIP: useInternalIP,
       clusterData: clusterData,
+      contextName: contextName,
     });
 
     // Write kubeconfig to disk

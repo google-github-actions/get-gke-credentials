@@ -17,6 +17,8 @@
 import { expect } from 'chai';
 import 'mocha';
 
+import crypto from 'crypto';
+
 import YAML from 'yaml';
 
 import { parseServiceAccountKeyJSON } from '../src/util';
@@ -55,6 +57,56 @@ const privateCluster: ClusterResponse = {
 import { ClusterClient, ClusterResponse } from '../src/gkeClient';
 
 describe('Cluster', function () {
+  describe('.parseResourceName', () => {
+    const cases = [
+      {
+        name: 'empty string',
+        input: '',
+        error: 'Failed to parse cluster name',
+      },
+      {
+        name: 'padded string',
+        input: '  ',
+        error: 'Failed to parse cluster name',
+      },
+      {
+        name: 'single name',
+        input: 'my-cluster',
+        expected: {
+          projectID: '',
+          location: '',
+          id: 'my-cluster',
+        },
+      },
+      {
+        name: 'full resource name',
+        input: 'projects/p/locations/l/clusters/c',
+        expected: {
+          projectID: 'p',
+          location: 'l',
+          id: 'c',
+        },
+      },
+      {
+        name: 'partial resource name',
+        input: 'projects/p/locations',
+        error: 'Failed to parse cluster name',
+      },
+    ];
+
+    cases.forEach((tc) => {
+      it(tc.name, async () => {
+        if (tc.expected) {
+          expect(ClusterClient.parseResourceName(tc.input)).to.eql(tc.expected);
+        } else if (tc.error) {
+          expect(() => {
+            ClusterClient.parseResourceName(tc.input);
+          }).to.throw(tc.error);
+        }
+      });
+    });
+  });
+
   it('initializes with ADC', async function () {
     if (!process.env.GCLOUD_PROJECT) this.skip();
 
@@ -108,6 +160,7 @@ describe('Cluster', function () {
   it('can get generate kubeconfig with token for public clusters', async function () {
     if (!credentials) this.skip();
 
+    const contextName = crypto.randomBytes(12).toString('hex');
     const client = new ClusterClient({
       projectID: project,
       location: location,
@@ -118,6 +171,7 @@ describe('Cluster', function () {
         useAuthProvider: false,
         useInternalIP: false,
         clusterData: publicCluster,
+        contextName: contextName,
       }),
     );
 
@@ -126,7 +180,7 @@ describe('Cluster', function () {
       publicCluster.data.masterAuth.clusterCaCertificate,
     );
     expect(kubeconfig.clusters[0].cluster.server).to.eql(`https://${publicCluster.data.endpoint}`);
-    expect(kubeconfig['current-context']).to.eql(publicCluster.data.name);
+    expect(kubeconfig['current-context']).to.eql(contextName);
     expect(kubeconfig.users[0].name).to.eql(publicCluster.data.name);
     expect(kubeconfig.users[0].user.token).to.be.not.null;
     expect(kubeconfig.users[0].user).to.not.have.property('auth-provider');
@@ -135,6 +189,7 @@ describe('Cluster', function () {
   it('can get generate kubeconfig with auth plugin for public clusters', async function () {
     if (!credentials) this.skip();
 
+    const contextName = crypto.randomBytes(12).toString('hex');
     const client = new ClusterClient({
       projectID: project,
       location: location,
@@ -145,6 +200,7 @@ describe('Cluster', function () {
         useAuthProvider: true,
         useInternalIP: false,
         clusterData: publicCluster,
+        contextName: contextName,
       }),
     );
 
@@ -153,7 +209,7 @@ describe('Cluster', function () {
       publicCluster.data.masterAuth.clusterCaCertificate,
     );
     expect(kubeconfig.clusters[0].cluster.server).to.eql(`https://${publicCluster.data.endpoint}`);
-    expect(kubeconfig['current-context']).to.eql(publicCluster.data.name);
+    expect(kubeconfig['current-context']).to.eql(contextName);
     expect(kubeconfig.users[0].name).to.eql(publicCluster.data.name);
     expect(kubeconfig.users[0].user['auth-provider'].name).to.eql('gcp');
     expect(kubeconfig.users[0].user).to.not.have.property('token');
@@ -162,6 +218,7 @@ describe('Cluster', function () {
   it('can get generate kubeconfig with token for private clusters', async function () {
     if (!credentials) this.skip();
 
+    const contextName = crypto.randomBytes(12).toString('hex');
     const client = new ClusterClient({
       projectID: project,
       location: location,
@@ -172,6 +229,7 @@ describe('Cluster', function () {
         useAuthProvider: false,
         useInternalIP: true,
         clusterData: privateCluster,
+        contextName: contextName,
       }),
     );
 
@@ -182,7 +240,7 @@ describe('Cluster', function () {
     expect(kubeconfig.clusters[0].cluster.server).to.eql(
       `https://${privateCluster.data.privateClusterConfig.privateEndpoint}`,
     );
-    expect(kubeconfig['current-context']).to.eql(privateCluster.data.name);
+    expect(kubeconfig['current-context']).to.eql(contextName);
     expect(kubeconfig.users[0].name).to.eql(privateCluster.data.name);
     expect(kubeconfig.users[0].user.token).to.be.not.null;
     expect(kubeconfig.users[0].user).to.not.have.property('auth-provider');
@@ -191,6 +249,7 @@ describe('Cluster', function () {
   it('can get generate kubeconfig with auth plugin for private clusters', async function () {
     if (!credentials) this.skip();
 
+    const contextName = crypto.randomBytes(12).toString('hex');
     const client = new ClusterClient({
       projectID: project,
       location: location,
@@ -201,6 +260,7 @@ describe('Cluster', function () {
         useAuthProvider: true,
         useInternalIP: true,
         clusterData: privateCluster,
+        contextName: contextName,
       }),
     );
 
@@ -211,7 +271,7 @@ describe('Cluster', function () {
     expect(kubeconfig.clusters[0].cluster.server).to.eql(
       `https://${privateCluster.data.privateClusterConfig.privateEndpoint}`,
     );
-    expect(kubeconfig['current-context']).to.eql(privateCluster.data.name);
+    expect(kubeconfig['current-context']).to.eql(contextName);
     expect(kubeconfig.users[0].name).to.eql(privateCluster.data.name);
     expect(kubeconfig.users[0].user['auth-provider'].name).to.eql('gcp');
     expect(kubeconfig.users[0].user).to.not.have.property('token');

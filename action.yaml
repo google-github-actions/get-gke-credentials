@@ -64,6 +64,12 @@ inputs:
       encoded.
     required: false
 
+  context_name:
+    description: |-
+      Name to use when creating the kubectl context. If not specified, the
+      default value is "gke_{PROJECT_ID}_{LOCATION}_${CLUSTER_NAME}".
+    required: false
+
 branding:
   icon: 'lock'
   color: 'blue'
