@@ -56,6 +56,10 @@ inputs:
     default: false
     required: false
 
+branding:
+  icon: 'lock'
+  color: 'blue'
+
 runs:
   using: 'node12'
   main: 'dist/index.js'
