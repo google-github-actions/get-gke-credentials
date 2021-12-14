@@ -22,7 +22,15 @@ import {
   setFailed,
   warning as logWarning,
 } from '@actions/core';
-import { writeFile } from './util';
+import { ExternalAccountClientOptions } from 'google-auth-library';
+
+import {
+  errorMessage,
+  isServiceAccountKey,
+  parseServiceAccountKeyJSON,
+  ServiceAccountKey,
+  writeFile,
+} from './util';
 import { ClusterClient } from './gkeClient';
 
 async function run(): Promise<void> {
@@ -31,20 +39,39 @@ async function run(): Promise<void> {
     const name = getInput('cluster_name', { required: true });
     const location = getInput('location', { required: true });
     const credentials = getInput('credentials');
-    const projectId = getInput('project_id');
+    let projectID = getInput('project_id');
     const useAuthProvider = getBooleanInput('use_auth_provider');
     const useInternalIP = getBooleanInput('use_internal_ip');
 
     // Add warning if using credentials
+    let credentialsJSON: ServiceAccountKey | ExternalAccountClientOptions | undefined;
     if (credentials) {
       logWarning(
-        '"credentials" input has been deprecated. ' +
+        'The "credentials" input is deprecated. ' +
           'Please switch to using google-github-actions/auth which supports both Workload Identity Federation and JSON Key authentication. ' +
           'For more details, see https://github.com/google-github-actions/get-gke-credentials#authorization',
       );
+
+      credentialsJSON = parseServiceAccountKeyJSON(credentials);
     }
+
+    // Pick the best project ID.
+    if (!projectID) {
+      if (credentialsJSON && isServiceAccountKey(credentialsJSON)) {
+        projectID = credentialsJSON?.project_id;
+        logInfo(`Extracted project ID '${projectID}' from credentials JSON`);
+      } else if (process.env?.GCLOUD_PROJECT) {
+        projectID = process.env.GCLOUD_PROJECT;
+        logInfo(`Extracted project ID '${projectID}' from $GCLOUD_PROJECT`);
+      }
+    }
+
     // Create Container Cluster client
-    const client = new ClusterClient(location, { projectId, credentials });
+    const client = new ClusterClient({
+      projectID: projectID,
+      location: location,
+      credentials: credentialsJSON,
+    });
 
     // Get Cluster object
     const clusterData = await client.getCluster(name);
@@ -61,9 +88,10 @@ async function run(): Promise<void> {
 
     // Export KUBECONFIG env var with path to kubeconfig
     exportVariable('KUBECONFIG', kubeConfigPath);
-    logInfo('Successfully created and exported "KUBECONFIG"');
+    logInfo(`Successfully created and exported "KUBECONFIG" at ${kubeConfigPath}`);
   } catch (err) {
-    setFailed(`google-github-actions/get-gke-credentials failed with: ${err}`);
+    const msg = errorMessage(err);
+    setFailed(`google-github-actions/get-gke-credentials failed with: ${msg}`);
   }
 }
 
