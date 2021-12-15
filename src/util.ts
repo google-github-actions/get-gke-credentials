@@ -40,7 +40,7 @@ export async function writeFile(fileContent: string): Promise<string> {
   const kubeConfigPath = pathjoin(workspace, uniqueName);
 
   try {
-    await fs.writeFile(kubeConfigPath, fileContent);
+    await fs.writeFile(kubeConfigPath, fileContent, { mode: 0o640, flag: 'wx' });
     return kubeConfigPath;
   } catch (err) {
     throw new Error(`Failed to write kubeconfig to ${kubeConfigPath}: ${err}`);
