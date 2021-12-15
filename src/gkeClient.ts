@@ -23,7 +23,7 @@ const { version: appVersion } = require('../package.json');
 
 // clusterResourceNamePattern is the regular expression to use to match resource
 // names.
-const clusterResourceNamePattern = new RegExp(/^projects\/.+\/locations\/.+\/clusters\/.+$/gi);
+const clusterResourceNamePattern = new RegExp(/^projects\/(.+)\/locations\/(.+)\/clusters\/(.+)$/i);
 
 /**
  * Available options to create the client.
@@ -45,6 +45,44 @@ type ClientOptions = {
  * @returns Cluster client.
  */
 export class ClusterClient {
+  /**
+   * parseResourceName parses a string as a cluster resource name. If it's just
+   * a cluster name, it returns an empty project ID and location. If a full
+   * resource name is given, the values are parsed and returned. All other
+   * inputs throw an error.
+   *
+   * @param name Name of the cluster (e.g. "my-cluster" or "projects/p/locations/l/clusters/c")
+   */
+  static parseResourceName(name: string): {
+    projectID: string;
+    location: string;
+    id: string;
+  } {
+    name = (name || '').trim();
+    if (!name) {
+      throw new Error(`Failed to parse cluster name: value is the empty string`);
+    }
+
+    if (!name.includes('/')) {
+      return {
+        projectID: '',
+        location: '',
+        id: name,
+      };
+    }
+
+    const matches = name.match(clusterResourceNamePattern);
+    if (!matches) {
+      throw new Error(`Failed to parse cluster name "${name}": invalid pattern`);
+    }
+
+    return {
+      projectID: matches[1],
+      location: matches[2],
+      id: matches[3],
+    };
+  }
+
   /**
    * projectID and location are hints to the client if a resource name does not
    * include the full resource name. If a full resource name is given (e.g.
@@ -93,32 +131,28 @@ export class ClusterClient {
    * @returns full resource name.
    */
   getResource(name: string): string {
+    name = (name || '').trim();
     if (!name) {
-      name = '';
-    }
-
-    name = name.trim();
-    if (!name) {
-      throw new Error(`Failed to parse resource name: name cannot be empty`);
+      throw new Error(`Failed to parse cluster name: name cannot be empty`);
     }
 
     if (name.includes('/')) {
       if (name.match(clusterResourceNamePattern)) {
         return name;
       } else {
-        throw new Error(`Invalid resource name "${name}"`);
+        throw new Error(`Invalid cluster name "${name}"`);
       }
     }
 
     const projectID = this.#projectID;
     if (!projectID) {
-      throw new Error(`Failed to get project ID to build resource name. Try setting "project_id".`);
+      throw new Error(`Failed to get project ID to build cluster name. Try setting "project_id".`);
     }
 
     const location = this.#location;
     if (!location) {
       throw new Error(
-        `Failed to get location (region/zone) to build resource name. Try setting "location".`,
+        `Failed to get location (region/zone) to build cluster name. Try setting "location".`,
       );
     }
 
@@ -155,6 +189,8 @@ export class ClusterClient {
     const auth = opts.useAuthProvider
       ? { user: { 'auth-provider': { name: 'gcp' } } }
       : { user: { token: await this.getToken() } };
+    const contextName = opts.contextName;
+
     const kubeConfig: KubeConfig = {
       'apiVersion': 'v1',
       'clusters': [
@@ -172,11 +208,11 @@ export class ClusterClient {
             cluster: cluster.data.name,
             user: cluster.data.name,
           },
-          name: cluster.data.name,
+          name: contextName,
         },
       ],
       'kind': 'Config',
-      'current-context': cluster.data.name,
+      'current-context': contextName,
       'users': [{ ...{ name: cluster.data.name }, ...auth }],
     };
     return YAML.stringify(kubeConfig);
@@ -210,6 +246,9 @@ export type CreateKubeConfigOptions = {
 
   // clusterData is the cluster response data.
   clusterData: ClusterResponse;
+
+  // contextName is the name of the context.
+  contextName: string;
 };
 
 export type KubeConfig = {
