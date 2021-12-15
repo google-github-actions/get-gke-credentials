@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0](https://www.github.com/google-github-actions/get-gke-credentials/compare/v0.4.0...v0.5.0) (2021-12-15)
+
+
+### Features
+
+* allow customizing context_name, default to the same as gcloud ([#159](https://www.github.com/google-github-actions/get-gke-credentials/issues/159)) ([9424404](https://www.github.com/google-github-actions/get-gke-credentials/commit/94244049a45904ba6473b3046af7d84edf620af7))
+
+
+### Bug Fixes
+
+* parse useAuthProvider and useInternalIP as booleans ([#157](https://www.github.com/google-github-actions/get-gke-credentials/issues/157)) ([413f8df](https://www.github.com/google-github-actions/get-gke-credentials/commit/413f8df6d4b1ce85f3a251f75c19b7b49272ee75))
+
 ## [0.4.0](https://www.github.com/google-github-actions/get-gke-credentials/compare/v0.3.0...v0.4.0) (2021-11-16)
 
 
