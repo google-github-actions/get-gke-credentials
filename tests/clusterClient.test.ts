@@ -78,6 +78,20 @@ describe('Cluster', function () {
     expect(result.data.masterAuth.clusterCaCertificate).to.not.be.null;
   });
 
+  it('can get cluster by full resource name', async function () {
+    if (!credentials || !name) this.skip();
+
+    const resourceName = `projects/${project}/locations/${location}/clusters/${name}`;
+    const client = new ClusterClient({
+      credentials: parseServiceAccountKeyJSON(credentials),
+    });
+    const result = await client.getCluster(resourceName);
+
+    expect(result).to.not.eql(null);
+    expect(result.data.endpoint).to.not.be.null;
+    expect(result.data.masterAuth.clusterCaCertificate).to.not.be.null;
+  });
+
   it('can get token', async function () {
     if (!credentials) this.skip();
 

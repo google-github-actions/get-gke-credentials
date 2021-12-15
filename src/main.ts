@@ -36,10 +36,10 @@ import { ClusterClient } from './gkeClient';
 async function run(): Promise<void> {
   try {
     // Get inputs
-    const name = getInput('cluster_name', { required: true });
-    const location = getInput('location', { required: true });
-    const credentials = getInput('credentials');
     let projectID = getInput('project_id');
+    const location = getInput('location');
+    const name = getInput('cluster_name', { required: true });
+    const credentials = getInput('credentials');
     const useAuthProvider = getBooleanInput('use_auth_provider');
     const useInternalIP = getBooleanInput('use_internal_ip');
 

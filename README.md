@@ -56,21 +56,33 @@ jobs:
 
 ## Inputs
 
-- `cluster_name`: (Required) Name of the cluster to get credentials for.
+-   `cluster_name` - (Required) Name of the cluster for which to get
+    credentials. If specified as a full resource name (e.g.
+    "projects/p/locations/l/clusters/c"), then then "project_id" and "location"
+    inputs are optional. If only specified as the name (e.g. "my-cluster"), then
+    the "project_id" and "location" inputs may be required.
 
-- `location`: (Required) Location (Region/Zone) for the cluster.
+-   `location` - (Optional) Location (e.g. region or zone) in which the cluster
+    resides. This value is required unless you specify "cluster_name" as a full
+    resource name.
 
-- `project_id`: (Optional) Project ID where the cluster is deployed. If provided, this
-  will override the project configured by gcloud.
+-   `project_id` - (Optional) Project ID where the cluster is deployed. If
+    provided, this will override the project configured by previous steps or
+    environment variables. If not provided, the project will be inferred,
+    best-effort.
 
-- `use_auth_provider`: (Optional) Flag to use GCP auth plugin in kubectl instead of a short lived token. Defaults to false.
+-   `use_auth_provider` - (Optional) If true, use the Google Cloud auth plugin in
+    kubectl instead of a short-lived access token. The default value is false.
 
-- `use_internal_ip`: (Optional) Flag to use the internal IP address of the cluster endpoint with private clusters. Defaults to false.
+-   `use_internal_ip` - (Optional) If true, use the internal IP address for the
+    cluster endpoint. This is mostly used with private GKE clusters. The default
+    value is false.
 
-- `credentials`: (**Deprecated**) This input is deprecated. See [auth section](https://github.com/google-github-actions/get-gke-credentials#via-google-github-actionsauth) for more details.
-  Service account key to use for authentication. This should be
-  the JSON formatted private key which can be exported from the Cloud Console. The
-  value can be raw or base64-encoded.
+-   `credentials` - (**DEPRECATED**) This input is deprecated. See [auth
+    section](#via-google-github-actionsauth) for more details. Service account
+    key to use for authentication. This should be the JSON formatted private key
+    which can be exported from the Cloud Console. The value can be raw or
+    base64-encoded.
 
 ## Outputs
 

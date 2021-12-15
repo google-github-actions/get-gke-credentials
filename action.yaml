@@ -19,41 +19,49 @@ description: |-
 author: Google LLC
 
 inputs:
-  credentials:
-    description: |-
-      Optional service account key to use for authentication to GKE. This should be the JSON
-      formatted private key which can be exported from the Cloud Console. The
-      value can be raw or base64-encoded.
-    required: false
-
   cluster_name:
     description: |-
-      Name of the cluster to get credentials for.
+      Name of the cluster for which to get credentials. If specified as a full
+      resource name (e.g. "projects/p/locations/l/clusters/c"), then then
+      "project_id" and "location" inputs are optional. If only specified as the
+      name (e.g. "my-cluster"), then the "project_id" and "location" inputs may
+      be required.
     required: true
 
   location:
     description: |-
-      Location (Region/Zone) for the cluster.
-    required: true
+      Location (e.g. region or zone) in which the cluster resides. This value is
+      required unless you specify "cluster_name" as a full resource name.
+    required: false
 
   project_id:
     description: |-
       Project ID where the cluster is deployed. If provided, this will override
-      the project configured by previous steps or environment variables.
+      the project configured by previous steps or environment variables. If not
+      provided, the project will be inferred, best-effort.
     required: false
 
   use_auth_provider:
     description: |-
-      Flag to use GCP auth plugin in kubectl instead of a short lived token.
-      Defaults to false.
+      If true, use the Google Cloud auth plugin in kubectl instead of a
+      short-lived access token. The default value is false.
     default: false
     required: false
 
   use_internal_ip:
     description: |-
-      Flag to use the internal IP address of the cluster endpoint (for use with
-      Private GKE clusters).
+      If true, use the internal IP address for the cluster endpoint. This is
+      mostly used with private GKE clusters. The default value is false.
     default: false
+    required: false
+
+  credentials:
+    description: |-
+      DEPRECATED: Use "google-github-actions/auth@v0" instead.
+
+      Credentials to use to authenticate to Google Cloud. This should be an
+      exported service account key JSON. It can be the raw value or base64
+      encoded.
     required: false
 
 branding:
