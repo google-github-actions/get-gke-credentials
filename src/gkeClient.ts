@@ -14,20 +14,16 @@
  * limitations under the License.
  */
 
-import { info as logInfo } from '@actions/core';
-import {
-  GoogleAuth,
-  JWT,
-  Compute,
-  UserRefreshClient,
-  Impersonated,
-  BaseExternalAccountClient,
-} from 'google-auth-library';
+import { CredentialBody, ExternalAccountClientOptions, GoogleAuth } from 'google-auth-library';
 import YAML from 'yaml';
 
 // Do not listen to the linter - this can NOT be rewritten as an ES6 import statement.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { version: appVersion } = require('../package.json');
+
+// clusterResourceNamePattern is the regular expression to use to match resource
+// names.
+const clusterResourceNamePattern = new RegExp(/^projects\/.+\/locations\/.+\/clusters\/.+$/gi);
 
 /**
  * Available options to create the client.
@@ -36,8 +32,9 @@ const { version: appVersion } = require('../package.json');
  * @param endpoint GCP endpoint (useful for testing).
  */
 type ClientOptions = {
-  credentials?: string;
-  projectId?: string;
+  projectID?: string;
+  location?: string;
+  credentials?: CredentialBody | ExternalAccountClientOptions;
 };
 
 /**
@@ -48,97 +45,84 @@ type ClientOptions = {
  * @returns Cluster client.
  */
 export class ClusterClient {
+  /**
+   * projectID and location are hints to the client if a resource name does not
+   * include the full resource name. If a full resource name is given (e.g.
+   * `projects/p/locations/l/clusters/c`), then that is used. However, if just a
+   * name is given (e.g. `c`), these values will be used to construct the full
+   * resource name.
+   */
+  readonly #projectID?: string;
+  readonly #location?: string;
+
   readonly defaultEndpoint = 'https://container.googleapis.com/v1';
   readonly userAgent = `github-actions-get-gke-credentials/${appVersion}`;
   readonly auth: GoogleAuth;
-  readonly parent: string;
-  authClient:
-    | JWT
-    | Compute
-    | UserRefreshClient
-    | Impersonated
-    | BaseExternalAccountClient
-    | undefined;
 
-  constructor(location: string, opts?: ClientOptions) {
-    let projectId = opts?.projectId;
-    if (
-      !opts?.credentials &&
-      (!process.env.GCLOUD_PROJECT || !process.env.GOOGLE_APPLICATION_CREDENTIALS)
-    ) {
-      throw new Error(
-        'No method for authentication. Set credentials in this action or export credentials from the setup-gcloud action',
-      );
-    }
-    // Instantiate Auth Client
-    // This method looks for the GCLOUD_PROJECT and GOOGLE_APPLICATION_CREDENTIALS
-    // environment variables.
+  constructor(opts: ClientOptions) {
     this.auth = new GoogleAuth({
       scopes: [
         'https://www.googleapis.com/auth/cloud-platform',
         'https://www.googleapis.com/auth/userinfo.email',
       ],
+      credentials: opts?.credentials,
+      projectId: opts?.projectID,
     });
-    // Set credentials, if any.
-    let jsonContent;
-    if (opts?.credentials) {
-      let creds = opts?.credentials;
-      if (!opts?.credentials.trim().startsWith('{')) {
-        creds = Buffer.from(creds, 'base64').toString('utf8');
-      }
-      jsonContent = JSON.parse(creds);
-      this.auth.jsonContent = jsonContent;
-    }
-    // Set project Id
-    if (!projectId && jsonContent && jsonContent.project_id) {
-      projectId = jsonContent.project_id;
-      logInfo('Setting project Id from credentials');
-    } else if (!projectId && process.env.GCLOUD_PROJECT) {
-      projectId = process.env.GCLOUD_PROJECT;
-      logInfo('Setting project Id from $GCLOUD_PROJECT');
-    } else if (!projectId) {
-      throw new Error('No project Id found. Set project Id in this action.');
-    }
 
-    this.parent = `projects/${projectId}/locations/${location}`;
+    this.#projectID = opts?.projectID;
+    this.#location = opts?.location;
   }
 
   /**
    * Retrieves the auth client for authenticating requests.
    *
-   * @returns JWT | Compute | UserRefreshClient | Impersonated | BaseExternalAccountClient.
-   */
-  async getAuthClient(): Promise<
-    JWT | Compute | UserRefreshClient | Impersonated | BaseExternalAccountClient
-  > {
-    if (!this.authClient) {
-      this.authClient = await this.auth.getClient();
-    }
-    return this.authClient;
-  }
-
-  /**
-   * Retrieves the auth client for authenticating requests.
-   *
-   * @returns JWT | Compute | UserRefreshClient.
+   * @returns string
    */
   async getToken(): Promise<string> {
-    const authClient = await this.getAuthClient();
-    const tokenResponse = await authClient.getAccessToken();
-    if (!tokenResponse.token) {
-      throw new Error('Unable to generate token.');
+    const token = await this.auth.getAccessToken();
+    if (!token) {
+      throw new Error('Failed to generate token.');
     }
-    return tokenResponse.token;
+    return token;
   }
 
   /**
    * Generates full resource name.
    *
-   * @param cluster cluster name.
+   * @param name cluster name.
    * @returns full resource name.
    */
-  getResource(cluster: string): string {
-    return `${this.parent}/clusters/${cluster}`;
+  getResource(name: string): string {
+    if (!name) {
+      name = '';
+    }
+
+    name = name.trim();
+    if (!name) {
+      throw new Error(`Failed to parse resource name: name cannot be empty`);
+    }
+
+    if (name.includes('/')) {
+      if (name.match(clusterResourceNamePattern)) {
+        return name;
+      } else {
+        throw new Error(`Invalid resource name "${name}"`);
+      }
+    }
+
+    const projectID = this.#projectID;
+    if (!projectID) {
+      throw new Error(`Failed to get project ID to build resource name. Try setting "project_id".`);
+    }
+
+    const location = this.#location;
+    if (!location) {
+      throw new Error(
+        `Failed to get location (region/zone) to build resource name. Try setting "location".`,
+      );
+    }
+
+    return `projects/${projectID}/locations/${location}/clusters/${name}`;
   }
 
   /**
@@ -148,13 +132,12 @@ export class ClusterClient {
    * @returns a Cluster object.
    */
   async getCluster(clusterName: string): Promise<ClusterResponse> {
-    const authClient = await this.getAuthClient();
-    const headers = await authClient.getRequestHeaders();
-    headers['User-Agent'] = this.userAgent;
     const url = `${this.defaultEndpoint}/${this.getResource(clusterName)}`;
-    const resp = (await authClient.request({
+    const resp = (await this.auth.request({
       url: url,
-      headers: headers,
+      headers: {
+        'User-Agent': this.userAgent,
+      },
     })) as ClusterResponse;
     return resp;
   }

@@ -16,8 +16,10 @@
 
 import { expect } from 'chai';
 import 'mocha';
-import { JWT } from 'google-auth-library';
+
 import YAML from 'yaml';
+
+import { parseServiceAccountKeyJSON } from '../src/util';
 
 const credentials = process.env.GET_GKE_CRED_SA_KEY_JSON;
 const project = process.env.GET_GKE_CRED_PROJECT;
@@ -53,39 +55,21 @@ const privateCluster: ClusterResponse = {
 import { ClusterClient, ClusterResponse } from '../src/gkeClient';
 
 describe('Cluster', function () {
-  it('initializes with JSON creds', function () {
-    const client = new ClusterClient(location, {
-      credentials: `{"foo":"bar"}`,
-      projectId: 'test',
-    });
-    expect(client.auth.jsonContent).eql({ foo: 'bar' });
-  });
-
-  it('initializes with base64 JSON creds', function () {
-    const client = new ClusterClient(location, {
-      credentials: Buffer.from(`{"foo":"bar"}`).toString('base64'),
-      projectId: 'test',
-    });
-    expect(client.auth.jsonContent).eql({ foo: 'bar' });
-  });
-
   it('initializes with ADC', async function () {
-    if (!process.env.GCLOUD_PROJECT || !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-      this.skip();
-    }
-    const client = new ClusterClient(location);
+    if (!process.env.GCLOUD_PROJECT) this.skip();
+
+    const client = new ClusterClient({ location: location });
     expect(client.auth.jsonContent).eql(null);
-    const auth = (await client.getAuthClient()) as JWT;
-    expect(auth.key).to.not.eql(undefined);
+    expect(await client.getToken()).to.be;
   });
 
   it('can get cluster', async function () {
-    if (!credentials || !name) {
-      this.skip();
-    }
-    const client = new ClusterClient(location, {
-      credentials: credentials,
-      projectId: project,
+    if (!credentials || !name) this.skip();
+
+    const client = new ClusterClient({
+      projectID: project,
+      location: location,
+      credentials: parseServiceAccountKeyJSON(credentials),
     });
     const result = await client.getCluster(name);
 
@@ -94,13 +78,27 @@ describe('Cluster', function () {
     expect(result.data.masterAuth.clusterCaCertificate).to.not.be.null;
   });
 
+  it('can get cluster by full resource name', async function () {
+    if (!credentials || !name) this.skip();
+
+    const resourceName = `projects/${project}/locations/${location}/clusters/${name}`;
+    const client = new ClusterClient({
+      credentials: parseServiceAccountKeyJSON(credentials),
+    });
+    const result = await client.getCluster(resourceName);
+
+    expect(result).to.not.eql(null);
+    expect(result.data.endpoint).to.not.be.null;
+    expect(result.data.masterAuth.clusterCaCertificate).to.not.be.null;
+  });
+
   it('can get token', async function () {
-    if (!credentials) {
-      this.skip();
-    }
-    const client = new ClusterClient('foo', {
-      credentials: credentials,
-      projectId: project,
+    if (!credentials) this.skip();
+
+    const client = new ClusterClient({
+      projectID: project,
+      location: location,
+      credentials: parseServiceAccountKeyJSON(credentials),
     });
     const token = await client.getToken();
 
@@ -108,12 +106,12 @@ describe('Cluster', function () {
   });
 
   it('can get generate kubeconfig with token for public clusters', async function () {
-    if (!credentials) {
-      this.skip();
-    }
-    const client = new ClusterClient('foo', {
-      credentials: credentials,
-      projectId: project,
+    if (!credentials) this.skip();
+
+    const client = new ClusterClient({
+      projectID: project,
+      location: location,
+      credentials: parseServiceAccountKeyJSON(credentials),
     });
     const kubeconfig = YAML.parse(
       await client.createKubeConfig({
@@ -135,12 +133,12 @@ describe('Cluster', function () {
   });
 
   it('can get generate kubeconfig with auth plugin for public clusters', async function () {
-    if (!credentials) {
-      this.skip();
-    }
-    const client = new ClusterClient('foo', {
-      credentials: credentials,
-      projectId: project,
+    if (!credentials) this.skip();
+
+    const client = new ClusterClient({
+      projectID: project,
+      location: location,
+      credentials: parseServiceAccountKeyJSON(credentials),
     });
     const kubeconfig = YAML.parse(
       await client.createKubeConfig({
@@ -162,12 +160,12 @@ describe('Cluster', function () {
   });
 
   it('can get generate kubeconfig with token for private clusters', async function () {
-    if (!credentials) {
-      this.skip();
-    }
-    const client = new ClusterClient('foo', {
-      credentials: credentials,
-      projectId: project,
+    if (!credentials) this.skip();
+
+    const client = new ClusterClient({
+      projectID: project,
+      location: location,
+      credentials: parseServiceAccountKeyJSON(credentials),
     });
     const kubeconfig = YAML.parse(
       await client.createKubeConfig({
@@ -191,12 +189,12 @@ describe('Cluster', function () {
   });
 
   it('can get generate kubeconfig with auth plugin for private clusters', async function () {
-    if (!credentials) {
-      this.skip();
-    }
-    const client = new ClusterClient('foo', {
-      credentials: credentials,
-      projectId: project,
+    if (!credentials) this.skip();
+
+    const client = new ClusterClient({
+      projectID: project,
+      location: location,
+      credentials: parseServiceAccountKeyJSON(credentials),
     });
     const kubeconfig = YAML.parse(
       await client.createKubeConfig({
