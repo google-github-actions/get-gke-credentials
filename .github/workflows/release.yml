@@ -29,7 +29,7 @@ jobs:
         git commit -m "chore: build dist"
 
     - name: 'Create pull request'
-      uses: 'peter-evans/create-pull-request@v3'
+      uses: 'peter-evans/create-pull-request@dcd5fd746d53dd8de555c0f10bca6c35628be47a'
       with:
         committer: 'github-actions <41898282+github-actions[bot]@users.noreply.github.com>'
         author: 'github-actions <41898282+github-actions[bot]@users.noreply.github.com>'
