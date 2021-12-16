@@ -4,6 +4,7 @@ on:
   push:
     branches:
     - 'main'
+  workflow_dispatch:
 
 jobs:
   # build compiles the code and creates a pull request of the compiled result if
@@ -45,7 +46,7 @@ jobs:
   create-pull-request:
     runs-on: 'ubuntu-latest'
     steps:
-    - uses: 'google-github-actions/release-please-action@main'
+    - uses: 'google-github-actions/release-please-action@v2'
       with:
         release-type: 'node'
         bump-minor-pre-major: true
@@ -57,7 +58,7 @@ jobs:
     runs-on: 'ubuntu-latest'
     steps:
     - id: 'release'
-      uses: 'google-github-actions/release-please-action@main'
+      uses: 'google-github-actions/release-please-action@v2'
       with:
         release-type: 'node'
         bump-minor-pre-major: true
