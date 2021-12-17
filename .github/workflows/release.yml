@@ -21,24 +21,20 @@ jobs:
     - name: 'npm build'
       run: 'npm ci && npm run build'
 
-    - name: 'Commit'
-      run: |-
-        git config user.name "github-actions"
-        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git add dist/
-        git commit -m "chore: build dist"
-
     - name: 'Create pull request'
       uses: 'peter-evans/create-pull-request@dcd5fd746d53dd8de555c0f10bca6c35628be47a'
       with:
-        committer: 'github-actions <41898282+github-actions[bot]@users.noreply.github.com>'
-        author: 'github-actions <41898282+github-actions[bot]@users.noreply.github.com>'
-        signoff: 'github-actions <41898282+github-actions[bot]@users.noreply.github.com>'
+        token: '${{ secrets.ACTIONS_BOT_TOKEN }}'
+        add-paths: 'dist/'
+        committer: 'google-github-actions-bot <github-actions-bot@google.com>'
+        author: 'google-github-actions-bot <github-actions-bot@google.com>'
+        signoff: 'google-github-actions-bot <github-actions-bot@google.com>'
         commit-message: 'Build dist'
         title: 'chore: build dist'
         body: 'Build compiled Typescript'
         base: 'main'
         branch: 'actions/build'
+        push-to-fork: 'google-github-actions-bot/get-gke-credentials'
         delete-branch: true
 
   # create-pull-request creates a release pull request if there are any
@@ -48,9 +44,11 @@ jobs:
     steps:
     - uses: 'google-github-actions/release-please-action@v2'
       with:
+        token: '${{ secrets.ACTIONS_BOT_TOKEN }}'
         release-type: 'node'
         bump-minor-pre-major: true
         command: 'release-pr'
+        fork: true
 
   # release does a release on the merge of the release pull request. It also
   # updates the floating tag alias for the major version.
