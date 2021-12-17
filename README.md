@@ -166,6 +166,27 @@ jobs:
 The action will automatically detect and use the Application Default
 Credentials.
 
+## Versioning
+
+We recommend pinning to the latest available major version:
+
+```yaml
+- uses: 'google-github-actions/get-gke-credentials@v0'
+```
+
+While this action attempts to follow semantic versioning, but we're ultimately
+human and sometimes make mistakes. To prevent accidental breaking changes, you
+can also pin to a specific version:
+
+```yaml
+- uses: 'google-github-actions/get-gke-credentials@v0.1.0'
+```
+
+However, you will not get automatic security updates or new features without
+explicitly updating your version number. Note that we only publish `MAJOR` and
+`MAJOR.MINOR.PATCH` versions. There is **not** a floating alias for
+`MAJOR.MINOR`.
+
 [gke]: https://cloud.google.com/kubernetes-engine
 [gcp-auth-plugin]: https://github.com/kubernetes/client-go/tree/master/plugin/pkg/client/auth/gcp
 [gcp-gcloud-auth]: https://cloud.google.com/kubernetes-engine/docs/how-to/api-server-authentication#using-gcloud-config
