@@ -39,7 +39,7 @@
     "@types/uuid": "^8.3.3",
     "@typescript-eslint/eslint-plugin": "^5.7.0",
     "@typescript-eslint/parser": "^5.7.0",
-    "@vercel/ncc": "^0.33.0",
+    "@vercel/ncc": "^0.33.1",
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
     "eslint": "^8.4.1",
