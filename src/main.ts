@@ -22,15 +22,15 @@ import {
   setFailed,
   warning as logWarning,
 } from '@actions/core';
-import { ExternalAccountClientOptions } from 'google-auth-library';
-
 import {
+  Credential,
   errorMessage,
   isServiceAccountKey,
-  parseServiceAccountKeyJSON,
-  ServiceAccountKey,
-  writeFile,
-} from './util';
+  parseCredential,
+  randomFilepath,
+  writeSecureFile,
+} from '@google-github-actions/actions-utils';
+
 import { ClusterClient } from './gkeClient';
 
 async function run(): Promise<void> {
@@ -47,7 +47,7 @@ async function run(): Promise<void> {
     let contextName = getInput('context_name');
 
     // Add warning if using credentials
-    let credentialsJSON: ServiceAccountKey | ExternalAccountClientOptions | undefined;
+    let credentialsJSON: Credential | undefined;
     if (credentials) {
       logWarning(
         'The "credentials" input is deprecated. ' +
@@ -55,7 +55,7 @@ async function run(): Promise<void> {
           'For more details, see https://github.com/google-github-actions/get-gke-credentials#authorization',
       );
 
-      credentialsJSON = parseServiceAccountKeyJSON(credentials);
+      credentialsJSON = parseCredential(credentials);
     }
 
     // Pick the best project ID.
@@ -115,11 +115,19 @@ async function run(): Promise<void> {
     });
 
     // Write kubeconfig to disk
-    const kubeConfigPath = await writeFile(kubeConfig);
+    try {
+      const workspace = process.env.GITHUB_WORKSPACE;
+      if (!workspace) {
+        throw new Error('Missing $GITHUB_WORKSPACE!');
+      }
 
-    // Export KUBECONFIG env var with path to kubeconfig
-    exportVariable('KUBECONFIG', kubeConfigPath);
-    logInfo(`Successfully created and exported "KUBECONFIG" at ${kubeConfigPath}`);
+      const kubeConfigPath = await writeSecureFile(randomFilepath(workspace), kubeConfig);
+      exportVariable('KUBECONFIG', kubeConfigPath);
+      logInfo(`Successfully created and exported "KUBECONFIG" at ${kubeConfigPath}`);
+    } catch (err) {
+      const msg = errorMessage(err);
+      throw new Error(`Failed to write Kubernetes config file: ${msg}`);
+    }
   } catch (err) {
     const msg = errorMessage(err);
     setFailed(`google-github-actions/get-gke-credentials failed with: ${msg}`);

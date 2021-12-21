@@ -19,9 +19,8 @@ import 'mocha';
 
 import crypto from 'crypto';
 
+import { parseCredential } from '@google-github-actions/actions-utils';
 import YAML from 'yaml';
-
-import { parseServiceAccountKeyJSON } from '../src/util';
 
 const credentials = process.env.GET_GKE_CRED_SA_KEY_JSON;
 const project = process.env.GET_GKE_CRED_PROJECT;
@@ -121,7 +120,7 @@ describe('Cluster', function () {
     const client = new ClusterClient({
       projectID: project,
       location: location,
-      credentials: parseServiceAccountKeyJSON(credentials),
+      credentials: parseCredential(credentials),
     });
     const result = await client.getCluster(name);
 
@@ -135,7 +134,7 @@ describe('Cluster', function () {
 
     const resourceName = `projects/${project}/locations/${location}/clusters/${name}`;
     const client = new ClusterClient({
-      credentials: parseServiceAccountKeyJSON(credentials),
+      credentials: parseCredential(credentials),
     });
     const result = await client.getCluster(resourceName);
 
@@ -150,7 +149,7 @@ describe('Cluster', function () {
     const client = new ClusterClient({
       projectID: project,
       location: location,
-      credentials: parseServiceAccountKeyJSON(credentials),
+      credentials: parseCredential(credentials),
     });
     const token = await client.getToken();
 
@@ -164,7 +163,7 @@ describe('Cluster', function () {
     const client = new ClusterClient({
       projectID: project,
       location: location,
-      credentials: parseServiceAccountKeyJSON(credentials),
+      credentials: parseCredential(credentials),
     });
     const kubeconfig = YAML.parse(
       await client.createKubeConfig({
@@ -193,7 +192,7 @@ describe('Cluster', function () {
     const client = new ClusterClient({
       projectID: project,
       location: location,
-      credentials: parseServiceAccountKeyJSON(credentials),
+      credentials: parseCredential(credentials),
     });
     const kubeconfig = YAML.parse(
       await client.createKubeConfig({
@@ -222,7 +221,7 @@ describe('Cluster', function () {
     const client = new ClusterClient({
       projectID: project,
       location: location,
-      credentials: parseServiceAccountKeyJSON(credentials),
+      credentials: parseCredential(credentials),
     });
     const kubeconfig = YAML.parse(
       await client.createKubeConfig({
@@ -253,7 +252,7 @@ describe('Cluster', function () {
     const client = new ClusterClient({
       projectID: project,
       location: location,
-      credentials: parseServiceAccountKeyJSON(credentials),
+      credentials: parseCredential(credentials),
     });
     const kubeconfig = YAML.parse(
       await client.createKubeConfig({
