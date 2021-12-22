@@ -21,6 +21,9 @@ import YAML from 'yaml';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { version: appVersion } = require('../package.json');
 
+// userAgent is the user agent string.
+const userAgent = `github-actions-get-gke-credentials/${appVersion}`;
+
 // clusterResourceNamePattern is the regular expression to use to match resource
 // names.
 const clusterResourceNamePattern = new RegExp(/^projects\/(.+)\/locations\/(.+)\/clusters\/(.+)$/i);
@@ -94,7 +97,6 @@ export class ClusterClient {
   readonly #location?: string;
 
   readonly defaultEndpoint = 'https://container.googleapis.com/v1';
-  readonly userAgent = `github-actions-get-gke-credentials/${appVersion}`;
   readonly auth: GoogleAuth;
 
   constructor(opts: ClientOptions) {
@@ -170,7 +172,7 @@ export class ClusterClient {
     const resp = (await this.auth.request({
       url: url,
       headers: {
-        'User-Agent': this.userAgent,
+        'User-Agent': userAgent,
       },
     })) as ClusterResponse;
     return resp;
