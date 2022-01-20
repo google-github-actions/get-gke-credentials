@@ -34,6 +34,7 @@ async function run(): Promise<void> {
   try {
     // Get inputs
     let projectID = getInput('project_id');
+    const quotaProjectID = getInput('quota_project_id');
     let location = getInput('location');
     const clusterName = ClusterClient.parseResourceName(
       getInput('cluster_name', { required: true }),
@@ -95,6 +96,7 @@ async function run(): Promise<void> {
     // Create Container Cluster client
     const client = new ClusterClient({
       projectID: projectID,
+      quotaProjectID: quotaProjectID,
       location: location,
     });
 

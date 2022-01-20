@@ -76,6 +76,14 @@ inputs:
       Defaults to auto discovery if empty.
     required: false
 
+  quota_project_id:
+    description: |-
+      Project ID from which to pull quota. The caller must have
+      serviceusage.services.use permission on the project. If unspecified, this
+      defaults to the project of the authenticated principle. This is an
+      advanced setting, most users should leave this blank.
+    required: false
+
 branding:
   icon: 'lock'
   color: 'blue'
