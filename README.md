@@ -95,7 +95,6 @@ with **at least** the following roles:
 
 - Kubernetes Engine Cluster Viewer (`roles/container.clusterViewer`):
   - Get and list access to GKE Clusters.
-`
 
 ### Via google-github-actions/auth
 
