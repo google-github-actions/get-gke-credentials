@@ -35,7 +35,7 @@
     "@kubernetes/client-node": "^0.16.1",
     "@types/chai": "^4.3.0",
     "@types/lodash": "^4.14.178",
-    "@types/mocha": "^9.0.0",
+    "@types/mocha": "^9.1.0",
     "@types/node": "^17.0.9",
     "@types/uuid": "^8.3.3",
     "@typescript-eslint/eslint-plugin": "^5.8.0",
