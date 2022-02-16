@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.0](https://www.github.com/google-github-actions/get-gke-credentials/compare/v0.5.0...v0.6.0) (2022-02-16)
+
+
+### Features
+
+* switch to using actions-utils ([#173](https://www.github.com/google-github-actions/get-gke-credentials/issues/173)) ([0b9d5d2](https://www.github.com/google-github-actions/get-gke-credentials/commit/0b9d5d2520a0daee75622b9fe3c61e2fccbea167))
+
+
+### Bug Fixes
+
+* Update user-agent to match other repos ([#203](https://www.github.com/google-github-actions/get-gke-credentials/issues/203)) ([73fa95e](https://www.github.com/google-github-actions/get-gke-credentials/commit/73fa95e2d1b67c873f58728ffd884b9c11e1f856))
+
 ## [0.5.0](https://www.github.com/google-github-actions/get-gke-credentials/compare/v0.4.0...v0.5.0) (2021-12-15)
 
 
