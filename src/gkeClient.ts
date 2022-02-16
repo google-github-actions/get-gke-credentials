@@ -22,7 +22,7 @@ import YAML from 'yaml';
 const { version: appVersion } = require('../package.json');
 
 // userAgent is the user agent string.
-const userAgent = `github-actions-get-gke-credentials/${appVersion}`;
+const userAgent = `google-github-actions:get-gke-credentials/${appVersion}`;
 
 // clusterResourceNamePattern is the regular expression to use to match resource
 // names.
