@@ -23,9 +23,13 @@ Authentication is performed by generating a [short-lived token][token] (default 
 
 This action requires:
 
-- Google Cloud credentials that are authorized to view a GKE cluster. See the Authorization section below for more information.
+-   Google Cloud credentials that are authorized to view a GKE cluster. See the
+    Authorization section below for more information. You also need to
+    [create a GKE cluster](https://cloud.google.com/kubernetes-engine/docs/quickstart).
 
-- [Create a GKE cluster](https://cloud.google.com/kubernetes-engine/docs/quickstart?_ga=2.267842766.1374248275.1591025444-475066991.1589991158)
+-   This action runs using Node 16. If you are using self-hosted GitHub Actions
+    runners, you must use runner version [2.285.0](https://github.com/actions/virtual-environments)
+    or newer.
 
 ## Usage
 
