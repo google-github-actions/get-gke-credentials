@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.7.0](https://www.github.com/google-github-actions/get-gke-credentials/compare/v0.6.0...v0.7.0) (2022-03-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* require Node 16 (#215)
+
+### Miscellaneous Chores
+
+* require Node 16 ([#215](https://www.github.com/google-github-actions/get-gke-credentials/issues/215)) ([b044f8a](https://www.github.com/google-github-actions/get-gke-credentials/commit/b044f8a93871e4b36b15adb52cec9b9cda4c5f3f))
+
 ## [0.6.0](https://www.github.com/google-github-actions/get-gke-credentials/compare/v0.5.0...v0.6.0) (2022-02-16)
 
 
