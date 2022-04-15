@@ -29,7 +29,7 @@
     "@actions/core": "^1.6.0",
     "@google-github-actions/actions-utils": "^0.1.6",
     "google-auth-library": "^7.14.0",
-    "yaml": "^1.10.2"
+    "yaml": "^2.0.1"
   },
   "devDependencies": {
     "@kubernetes/client-node": "^0.16.3",
