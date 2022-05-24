@@ -82,6 +82,16 @@ jobs:
     cluster endpoint. This is mostly used with private GKE clusters. The default
     value is false.
 
+-   `use_connect_gateway` - (Optional) If true, uses the Connect Gateway endpoint to connect to cluster.
+      For more details https://cloud.google.com/anthos/multicluster-management/gateway.
+      The default value is false.
+
+-   `use_connect_gateway` - (Optional) Fleet membership name of form
+      "projects/PROJECT_ID/locations/LOCATION/memberships/MEMBERSHIP_NAME"
+      to use for generating Connect Gateway endpoint.
+      This only applies if "use_connect_gateway" is true.
+      Defaults to auto discovery if empty.
+
 -   `credentials` - (**DEPRECATED**) This input is deprecated. See [auth
     section](#via-google-github-actionsauth) for more details. Service account
     key to use for authentication. This should be the JSON formatted private key
@@ -170,6 +180,27 @@ jobs:
 The action will automatically detect and use the Application Default
 Credentials.
 
+## With Connect gateway
+
+You can utilize the [Connect gateway][connect-gw] feature of [Fleets][fleets] with this action
+to connect to clusters without direct network connectivity. This can be useful for connecting to [private clusters](https://cloud.google.com/kubernetes-engine/docs/concepts/private-cluster-concept)
+from GitHub hosted runners.
+
+```yaml
+jobs:
+  job_id:
+    steps:
+    - id: 'get-credentials'
+      uses: 'google-github-actions/get-gke-credentials@v0'
+      with:
+        cluster_name: 'my-private-cluster'
+        location: 'us-central1-a'
+        use_connect_gateway: 'true'
+```
+
+Follow the [Connect gateway documentation][connect-gw] for initial setup.
+Note: The Connect Agent service account must have the correct [impersonation policy][connect-gw-impersonation] on the service account used to authenticate this action.
+
 ## Versioning
 
 We recommend pinning to the latest available major version:
@@ -201,3 +232,6 @@ explicitly updating your version number. Note that we only publish `MAJOR` and
 [gh-runners]: https://help.github.com/en/actions/hosting-your-own-runners/about-self-hosted-runners
 [gh-secret]: https://help.github.com/en/actions/configuring-and-managing-workflows/creating-and-storing-encrypted-secrets
 [setup-gcloud]: ../setup-gcloud
+[connect-gw]: https://cloud.google.com/anthos/multicluster-management/gateway/setup
+[connect-gw-impersonation]: https://cloud.google.com/anthos/multicluster-management/gateway/setup#gcloud
+[fleets]: https://cloud.google.com/anthos/multicluster-management/fleet-overview#authenticating_to_clusters
