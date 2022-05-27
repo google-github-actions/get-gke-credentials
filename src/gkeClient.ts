@@ -413,6 +413,9 @@ export type ClusterResponse = {
   };
 };
 
+/**
+ * HubMembershipsListResponse is the response from listing GKE Hub memberships.
+ */
 type HubMembershipsListResponse = {
   data: {
     resources: [
