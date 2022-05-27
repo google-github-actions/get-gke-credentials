@@ -86,7 +86,7 @@ jobs:
       For more details https://cloud.google.com/anthos/multicluster-management/gateway.
       The default value is false.
 
--   `use_connect_gateway` - (Optional) Fleet membership name of form
+-   `fleet_membership_name` - (Optional) Fleet membership name of form
       "projects/PROJECT_ID/locations/LOCATION/memberships/MEMBERSHIP_NAME"
       to use for generating Connect Gateway endpoint.
       This only applies if "use_connect_gateway" is true.

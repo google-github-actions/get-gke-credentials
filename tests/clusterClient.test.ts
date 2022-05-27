@@ -419,7 +419,7 @@ describe('Cluster', function () {
     expect(kubeconfig.users[0].user).to.not.have.property('token');
   });
 
-  it('can generate kubeconfig with connect gw', async function () {
+  it('can generate kubeconfig with connect gateway', async function () {
     if (!credentials) this.skip();
 
     const contextName = crypto.randomBytes(12).toString('hex');
