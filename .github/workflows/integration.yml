@@ -134,3 +134,47 @@ jobs:
           echo "Expected no pods. Got ${pods}"
           exit 1
         fi
+  connect_gw_wif:
+    if: ${{ github.event_name == 'push' || github.repository == github.event.pull_request.head.repo.full_name && github.actor != 'dependabot[bot]' }}
+    name: 'connect_gw_wif'
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    runs-on: 'ubuntu-latest'
+    steps:
+    - uses: 'actions/checkout@v3'
+
+    - uses: 'actions/setup-node@v3'
+      with:
+        node-version: '16.x'
+
+    - name: 'npm build'
+      run: 'npm ci && npm run build'
+
+    - uses: 'google-github-actions/auth@main'
+      with:
+        workload_identity_provider: '${{ secrets.WIF_PROVIDER_NAME }}'
+        service_account: '${{ secrets.GET_GKE_CRED_SA_EMAIL }}'
+
+    - name: 'get-gke-credentials'
+      uses: './'
+      with:
+        project_id: '${{ secrets.GET_GKE_CRED_PROJECT }}'
+        cluster_name: '${{ secrets.GET_GKE_PRIV_CLUSTER_NAME }}'
+        location: '${{ secrets.GET_GKE_PRIV_CLUSTER_LOCATION }}'
+        use_connect_gateway: 'true'
+
+    - name: 'npm e2e-tests'
+      run: 'npm run e2e-tests'
+
+    # Use kubectl with the generated kubeconfig to auth and list pods. There
+    # should be no pods in the default namespace.
+    - name: 'kubectl'
+      run: |-
+        set -eEuo pipefail
+
+        pods=$(kubectl get pods -o=jsonpath='{$.items[*]}')
+        if [ -n "$pods" ]; then
+          echo "Expected no pods. Got ${pods}"
+          exit 1
+        fi
