@@ -187,9 +187,11 @@ can also pin to a specific version:
 ```
 
 However, you will not get automatic security updates or new features without
-explicitly updating your version number. Note that we only publish `MAJOR` and
-`MAJOR.MINOR.PATCH` versions. There is **not** a floating alias for
-`MAJOR.MINOR`.
+explicitly updating your version number. To keep the actions you use updated 
+to the latest versions, you can use [dependabot](gh-action-depandabot).
+
+Note that we only publish `MAJOR` and `MAJOR.MINOR.PATCH` versions. There is 
+**not** a floating alias for `MAJOR.MINOR`
 
 [gke]: https://cloud.google.com/kubernetes-engine
 [gcp-auth-plugin]: https://github.com/kubernetes/client-go/tree/master/plugin/pkg/client/auth/gcp
@@ -200,4 +202,5 @@ explicitly updating your version number. Note that we only publish `MAJOR` and
 [wif]: https://cloud.google.com/iam/docs/workload-identity-federation
 [gh-runners]: https://help.github.com/en/actions/hosting-your-own-runners/about-self-hosted-runners
 [gh-secret]: https://help.github.com/en/actions/configuring-and-managing-workflows/creating-and-storing-encrypted-secrets
+[gh-action-depandabot]: https://docs.github.com/en/code-security/dependabot/working-with-dependabot/keeping-your-actions-up-to-date-with-dependabot
 [setup-gcloud]: ../setup-gcloud
