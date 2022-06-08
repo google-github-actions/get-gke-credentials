@@ -70,6 +70,21 @@ inputs:
       default value is "gke_{PROJECT_ID}_{LOCATION}_${CLUSTER_NAME}".
     required: false
 
+  use_connect_gateway:
+    description: |-
+      If true, uses the Connect Gateway endpoint to connect to cluster. For
+      more details https://cloud.google.com/anthos/multicluster-management/gateway.
+      The default value is false.
+    default: false
+    required: false
+
+  fleet_membership_name:
+    description: |-
+      Fleet membership name of form "projects/PROJECT_ID/locations/LOCATION/memberships/MEMBERSHIP_NAME"
+      to use for generating Connect Gateway endpoint. This only applies if "use_connect_gateway" is true.
+      Defaults to auto discovery if empty.
+    required: false
+
 branding:
   icon: 'lock'
   color: 'blue'

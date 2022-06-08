@@ -29,6 +29,7 @@ import {
   parseCredential,
   randomFilepath,
   writeSecureFile,
+  presence,
 } from '@google-github-actions/actions-utils';
 
 import { ClusterClient } from './gkeClient';
@@ -45,6 +46,14 @@ async function run(): Promise<void> {
     const useAuthProvider = getBooleanInput('use_auth_provider');
     const useInternalIP = getBooleanInput('use_internal_ip');
     let contextName = getInput('context_name');
+    const useConnectGW = getBooleanInput('use_connect_gateway');
+
+    // Only one of use_connect_gateway or use_internal_ip should be provided
+    if (useInternalIP && useConnectGW) {
+      throw new Error(
+        'The workflow must specify only one of `use_internal_ip` or `use_connect_gateway`',
+      );
+    }
 
     // Add warning if using credentials
     let credentialsJSON: Credential | undefined;
@@ -106,10 +115,25 @@ async function run(): Promise<void> {
     // Get Cluster object
     const clusterData = await client.getCluster(clusterName.id);
 
+    // If using Connect Gateway, get endpoint
+    let connectGWEndpoint;
+    if (useConnectGW) {
+      let fleetMembershipName = presence(getInput('fleet_membership_name'));
+      // if explicit fleet_membership_name, skip discovery
+      if (!fleetMembershipName) {
+        fleetMembershipName = await client.discoverClusterMembership(clusterName.id);
+      }
+      logInfo(`Using fleet membership "${fleetMembershipName}"`);
+
+      connectGWEndpoint = await client.getConnectGWEndpoint(fleetMembershipName);
+      logInfo(`Using Connect Gateway endpoint "${connectGWEndpoint}"`);
+    }
+
     // Create KubeConfig
     const kubeConfig = await client.createKubeConfig({
       useAuthProvider: useAuthProvider,
       useInternalIP: useInternalIP,
+      connectGWEndpoint: connectGWEndpoint,
       clusterData: clusterData,
       contextName: contextName,
     });
