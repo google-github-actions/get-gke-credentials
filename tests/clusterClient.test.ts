@@ -196,6 +196,7 @@ describe('Cluster', function () {
   });
 
   describe('.discoverClusterMembership', () => {
+    const client = new ClusterClient({ projectID: 'foo' });
     const cases = [
       {
         name: 'valid',
@@ -231,7 +232,7 @@ describe('Cluster', function () {
           'expected one membership for projects/p/locations/l/clusters/c in foo. Found multiple memberships membershipName1,membershipName2.',
       },
     ];
-    const client = new ClusterClient({ projectID: 'foo' });
+
     cases.forEach((tc) => {
       it(tc.name, async () => {
         sinon.stub(client.auth, 'request').resolves({ data: tc.resp } as GaxiosResponse);
@@ -253,6 +254,7 @@ describe('Cluster', function () {
   });
 
   describe('.getProjectNumFromID', () => {
+    const client = new ClusterClient({});
     const cases = [
       {
         name: 'valid',
@@ -267,7 +269,7 @@ describe('Cluster', function () {
         error: 'failed to parse project number: expected format projects/PROJECT_NUMBER. Got bar',
       },
     ];
-    const client = new ClusterClient({});
+
     cases.forEach((tc) => {
       it(tc.name, async () => {
         sinon.stub(client.auth, 'request').resolves({ data: tc.resp } as GaxiosResponse);

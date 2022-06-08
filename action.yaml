@@ -83,7 +83,6 @@ inputs:
       Fleet membership name of form "projects/PROJECT_ID/locations/LOCATION/memberships/MEMBERSHIP_NAME"
       to use for generating Connect Gateway endpoint. This only applies if "use_connect_gateway" is true.
       Defaults to auto discovery if empty.
-    default: ''
     required: false
 
 branding:
