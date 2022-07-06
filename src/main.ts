@@ -147,6 +147,7 @@ async function run(): Promise<void> {
 
       const kubeConfigPath = await writeSecureFile(randomFilepath(workspace), kubeConfig);
       exportVariable('KUBECONFIG', kubeConfigPath);
+      exportVariable('KUBE_CONFIG_PATH', kubeConfigPath);
       logInfo(`Successfully created and exported "KUBECONFIG" at ${kubeConfigPath}`);
     } catch (err) {
       const msg = errorMessage(err);
