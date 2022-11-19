@@ -42,7 +42,7 @@ jobs:
 
     steps:
     - id: 'auth'
-      uses: 'google-github-actions/auth@v0'
+      uses: 'google-github-actions/auth@v1'
       with:
         workload_identity_provider: 'projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
         service_account: 'my-service-account@my-project.iam.gserviceaccount.com'
@@ -92,12 +92,6 @@ jobs:
       This only applies if "use_connect_gateway" is true.
       Defaults to auto discovery if empty.
 
--   `credentials` - (**DEPRECATED**) This input is deprecated. See [auth
-    section](#via-google-github-actionsauth) for more details. Service account
-    key to use for authentication. This should be the JSON formatted private key
-    which can be exported from the Cloud Console. The value can be raw or
-    base64-encoded.
-
 ## Outputs
 
 - Exports env var `KUBECONFIG` which is set to the generated `kubeconfig` file path.
@@ -129,7 +123,7 @@ jobs:
 
     steps:
     - id: 'auth'
-      uses: 'google-github-actions/auth@v0'
+      uses: 'google-github-actions/auth@v1'
       with:
         workload_identity_provider: 'projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
         service_account: 'my-service-account@my-project.iam.gserviceaccount.com'
@@ -148,7 +142,7 @@ jobs:
   job_id:
     steps:
     - id: 'auth'
-      uses: 'google-github-actions/auth@v0'
+      uses: 'google-github-actions/auth@v1'
       with:
         credentials_json: '${{ secrets.gcp_credentials }}'
 

@@ -19,12 +19,11 @@ import 'mocha';
 
 import crypto from 'crypto';
 
-import { errorMessage, parseCredential } from '@google-github-actions/actions-utils';
+import { errorMessage } from '@google-github-actions/actions-utils';
 import YAML from 'yaml';
 import * as sinon from 'sinon';
 import { GaxiosResponse } from 'gaxios';
 
-const credentials = process.env.GET_GKE_CRED_SA_KEY_JSON;
 const project = process.env.GET_GKE_CRED_PROJECT;
 const name = process.env.GET_GKE_CRED_CLUSTER_NAME;
 const location = process.env.GKE_AUTH_CLUSTER_LOCATION || 'us-central1-a';
@@ -167,12 +166,11 @@ describe('Cluster', function () {
   });
 
   it('can get cluster', async function () {
-    if (!credentials || !name) this.skip();
+    if (!name) this.skip();
 
     const client = new ClusterClient({
       projectID: project,
       location: location,
-      credentials: parseCredential(credentials),
     });
     const result = await client.getCluster(name);
 
@@ -182,12 +180,10 @@ describe('Cluster', function () {
   });
 
   it('can get cluster by full resource name', async function () {
-    if (!credentials || !name) this.skip();
+    if (!name) this.skip();
 
     const resourceName = `projects/${project}/locations/${location}/clusters/${name}`;
-    const client = new ClusterClient({
-      credentials: parseCredential(credentials),
-    });
+    const client = new ClusterClient();
     const result = await client.getCluster(resourceName);
 
     expect(result).to.not.eql(null);
@@ -254,7 +250,7 @@ describe('Cluster', function () {
   });
 
   describe('.getProjectNumFromID', () => {
-    const client = new ClusterClient({});
+    const client = new ClusterClient();
     const cases = [
       {
         name: 'valid',
@@ -289,12 +285,9 @@ describe('Cluster', function () {
   });
 
   it('can get token', async function () {
-    if (!credentials) this.skip();
-
     const client = new ClusterClient({
       projectID: project,
       location: location,
-      credentials: parseCredential(credentials),
     });
     const token = await client.getToken();
 
@@ -302,13 +295,10 @@ describe('Cluster', function () {
   });
 
   it('can get generate kubeconfig with token for public clusters', async function () {
-    if (!credentials) this.skip();
-
     const contextName = crypto.randomBytes(12).toString('hex');
     const client = new ClusterClient({
       projectID: project,
       location: location,
-      credentials: parseCredential(credentials),
     });
     const kubeconfig = YAML.parse(
       await client.createKubeConfig({
@@ -331,13 +321,10 @@ describe('Cluster', function () {
   });
 
   it('can get generate kubeconfig with auth plugin for public clusters', async function () {
-    if (!credentials) this.skip();
-
     const contextName = crypto.randomBytes(12).toString('hex');
     const client = new ClusterClient({
       projectID: project,
       location: location,
-      credentials: parseCredential(credentials),
     });
     const kubeconfig = YAML.parse(
       await client.createKubeConfig({
@@ -360,13 +347,10 @@ describe('Cluster', function () {
   });
 
   it('can get generate kubeconfig with token for private clusters', async function () {
-    if (!credentials) this.skip();
-
     const contextName = crypto.randomBytes(12).toString('hex');
     const client = new ClusterClient({
       projectID: project,
       location: location,
-      credentials: parseCredential(credentials),
     });
     const kubeconfig = YAML.parse(
       await client.createKubeConfig({
@@ -391,13 +375,10 @@ describe('Cluster', function () {
   });
 
   it('can get generate kubeconfig with auth plugin for private clusters', async function () {
-    if (!credentials) this.skip();
-
     const contextName = crypto.randomBytes(12).toString('hex');
     const client = new ClusterClient({
       projectID: project,
       location: location,
-      credentials: parseCredential(credentials),
     });
     const kubeconfig = YAML.parse(
       await client.createKubeConfig({
@@ -422,13 +403,10 @@ describe('Cluster', function () {
   });
 
   it('can generate kubeconfig with connect gateway', async function () {
-    if (!credentials) this.skip();
-
     const contextName = crypto.randomBytes(12).toString('hex');
     const client = new ClusterClient({
       projectID: project,
       location: location,
-      credentials: parseCredential(credentials),
     });
     const kubeconfig = YAML.parse(
       await client.createKubeConfig({
