@@ -15,7 +15,7 @@
  */
 
 import { presence } from '@google-github-actions/actions-utils';
-import { CredentialBody, ExternalAccountClientOptions, GoogleAuth } from 'google-auth-library';
+import { GoogleAuth } from 'google-auth-library';
 import YAML from 'yaml';
 
 // Do not listen to the linter - this can NOT be rewritten as an ES6 import statement.
@@ -38,13 +38,12 @@ const membershipResourceNamePattern = new RegExp(
 /**
  * Available options to create the client.
  *
- * @param credentials GCP JSON credentials (default uses ADC).
- * @param endpoint GCP endpoint (useful for testing).
+ * @param projectID GCP project ID.
+ * @param location Cluster location.
  */
 type ClientOptions = {
   projectID?: string;
   location?: string;
-  credentials?: CredentialBody | ExternalAccountClientOptions;
 };
 
 /**
@@ -139,13 +138,12 @@ export class ClusterClient {
   readonly connectGatewayHostPath = 'connectgateway.googleapis.com/v1';
   readonly auth: GoogleAuth;
 
-  constructor(opts: ClientOptions) {
+  constructor(opts?: ClientOptions) {
     this.auth = new GoogleAuth({
       scopes: [
         'https://www.googleapis.com/auth/cloud-platform',
         'https://www.googleapis.com/auth/userinfo.email',
       ],
-      credentials: opts?.credentials,
       projectId: opts?.projectID,
     });
 

@@ -55,15 +55,6 @@ inputs:
     default: false
     required: false
 
-  credentials:
-    description: |-
-      DEPRECATED: Use "google-github-actions/auth@v0" instead.
-
-      Credentials to use to authenticate to Google Cloud. This should be an
-      exported service account key JSON. It can be the raw value or base64
-      encoded.
-    required: false
-
   context_name:
     description: |-
       Name to use when creating the kubectl context. If not specified, the

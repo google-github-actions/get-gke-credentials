@@ -20,13 +20,9 @@ import {
   getInput,
   info as logInfo,
   setFailed,
-  warning as logWarning,
 } from '@actions/core';
 import {
-  Credential,
   errorMessage,
-  isServiceAccountKey,
-  parseCredential,
   randomFilepath,
   writeSecureFile,
   presence,
@@ -42,7 +38,6 @@ async function run(): Promise<void> {
     const clusterName = ClusterClient.parseResourceName(
       getInput('cluster_name', { required: true }),
     );
-    const credentials = getInput('credentials');
     const useAuthProvider = getBooleanInput('use_auth_provider');
     const useInternalIP = getBooleanInput('use_internal_ip');
     let contextName = getInput('context_name');
@@ -55,26 +50,11 @@ async function run(): Promise<void> {
       );
     }
 
-    // Add warning if using credentials
-    let credentialsJSON: Credential | undefined;
-    if (credentials) {
-      logWarning(
-        'The "credentials" input is deprecated. ' +
-          'Please switch to using google-github-actions/auth which supports both Workload Identity Federation and JSON Key authentication. ' +
-          'For more details, see https://github.com/google-github-actions/get-gke-credentials#authorization',
-      );
-
-      credentialsJSON = parseCredential(credentials);
-    }
-
     // Pick the best project ID.
     if (!projectID) {
       if (clusterName.projectID) {
         projectID = clusterName.projectID;
         logInfo(`Extracted projectID "${projectID}" from cluster resource name`);
-      } else if (credentialsJSON && isServiceAccountKey(credentialsJSON)) {
-        projectID = credentialsJSON?.project_id;
-        logInfo(`Extracted project ID "${projectID}" from credentials JSON`);
       } else if (process.env?.GCLOUD_PROJECT) {
         projectID = process.env.GCLOUD_PROJECT;
         logInfo(`Extracted project ID "${projectID}" from $GCLOUD_PROJECT`);
@@ -109,7 +89,6 @@ async function run(): Promise<void> {
     const client = new ClusterClient({
       projectID: projectID,
       location: location,
-      credentials: credentialsJSON,
     });
 
     // Get Cluster object
