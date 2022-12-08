@@ -1,4 +1,4 @@
-name: 'integration'
+name: 'Integration'
 
 on:
   push:
@@ -7,18 +7,19 @@ on:
   pull_request:
     branches:
     - 'main'
+  workflow_dispatch:
 
 concurrency:
   group: '${{ github.workflow }}-${{ github.head_ref || github.ref }}'
   cancel-in-progress: true
 
+permissions:
+  contents: 'read'
+  id-token: 'write'
+
 jobs:
-  auth_workload_identity_federation:
+  public:
     if: ${{ github.event_name == 'push' || github.repository == github.event.pull_request.head.repo.full_name && github.actor != 'dependabot[bot]' }}
-    name: 'auth_workload_identity_federation'
-    permissions:
-      contents: 'read'
-      id-token: 'write'
     runs-on: 'ubuntu-latest'
     steps:
     - uses: 'actions/checkout@v3'
@@ -42,27 +43,12 @@ jobs:
         cluster_name: '${{ secrets.GET_GKE_CRED_CLUSTER_NAME }}'
         location: '${{ secrets.GET_GKE_CRED_CLUSTER_LOCATION }}'
 
-    - name: 'npm e2e-tests'
-      run: 'npm run e2e-tests'
-
-    # Use kubectl with the generated kubeconfig to auth and list pods. There
-    # should be no pods in the default namespace.
     - name: 'kubectl'
       run: |-
-        set -eEuo pipefail
+        kubectl get ns
 
-        pods=$(kubectl get pods -o=jsonpath='{$.items[*]}')
-        if [ -n "$pods" ]; then
-          echo "Expected no pods. Got ${pods}"
-          exit 1
-        fi
-
-  connect_gw_wif:
+  private:
     if: ${{ github.event_name == 'push' || github.repository == github.event.pull_request.head.repo.full_name && github.actor != 'dependabot[bot]' }}
-    name: 'connect_gw_wif'
-    permissions:
-      contents: 'read'
-      id-token: 'write'
     runs-on: 'ubuntu-latest'
     steps:
     - uses: 'actions/checkout@v3'
@@ -87,17 +73,6 @@ jobs:
         location: '${{ secrets.GET_GKE_PRIV_CLUSTER_LOCATION }}'
         use_connect_gateway: 'true'
 
-    - name: 'npm e2e-tests'
-      run: 'npm run e2e-tests'
-
-    # Use kubectl with the generated kubeconfig to auth and list pods. There
-    # should be no pods in the default namespace.
     - name: 'kubectl'
       run: |-
-        set -eEuo pipefail
-
-        pods=$(kubectl get pods -o=jsonpath='{$.items[*]}')
-        if [ -n "$pods" ]; then
-          echo "Expected no pods. Got ${pods}"
-          exit 1
-        fi
+        kubectl get ns
