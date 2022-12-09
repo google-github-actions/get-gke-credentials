@@ -440,7 +440,7 @@ export type ClusterResponse = {
 };
 
 /**
- * HubMembershipsListResponse is the response from listing GKE Hub memberships.
+ * HubMembershipsResponse is the response from listing GKE Hub memberships.
  */
 type HubMembershipsResponse = {
   data: {
@@ -448,10 +448,16 @@ type HubMembershipsResponse = {
   };
 };
 
+/**
+ * HubMembershipResponse is the response from getting a GKE Hub membership.
+ */
 type HubMembershipResponse = {
   data: HubMembership;
 };
 
+/**
+ * HubMembership is a single HubMembership.
+ */
 type HubMembership = {
   name: string;
   description: string;

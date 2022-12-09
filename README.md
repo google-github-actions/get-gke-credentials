@@ -100,8 +100,11 @@ jobs:
 There are a few ways to authenticate this action. A service account will be needed
 with **at least** the following roles:
 
-- Kubernetes Engine Cluster Viewer (`roles/container.clusterViewer`):
-  - Get and list access to GKE Clusters.
+- Kubernetes Engine Cluster Viewer (`roles/container.clusterViewer`)
+
+If you are using the Connect Gateway, you must also have:
+
+-   GKE Hub Viewer (`roles/gkehub.viewer`)
 
 
 ### Via google-github-actions/auth
