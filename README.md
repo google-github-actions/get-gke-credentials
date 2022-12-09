@@ -82,15 +82,14 @@ jobs:
     cluster endpoint. This is mostly used with private GKE clusters. The default
     value is false.
 
--   `use_connect_gateway` - (Optional) If true, uses the Connect Gateway endpoint to connect to cluster.
-      For more details https://cloud.google.com/anthos/multicluster-management/gateway.
-      The default value is false.
+-   `use_connect_gateway` - (Optional) If true, uses the [Connect Gateway
+    endpoint](https://cloud.google.com/anthos/multicluster-management/gateway)
+    to connect to the cluster. The default value is false.
 
 -   `fleet_membership_name` - (Optional) Fleet membership name of form
-      "projects/PROJECT_ID/locations/LOCATION/memberships/MEMBERSHIP_NAME"
-      to use for generating Connect Gateway endpoint.
-      This only applies if "use_connect_gateway" is true.
-      Defaults to auto discovery if empty.
+    "projects/PROJECT_ID/locations/LOCATION/memberships/MEMBERSHIP_NAME" to use
+    for generating the Connect Gateway endpoint. This only applies if
+    "use_connect_gateway" is true. Defaults to auto discovery if empty.
 
 ## Outputs
 
@@ -101,9 +100,12 @@ jobs:
 There are a few ways to authenticate this action. A service account will be needed
 with **at least** the following roles:
 
-- Kubernetes Engine Cluster Viewer (`roles/container.clusterViewer`):
-  - Get and list access to GKE Clusters.
-`
+- Kubernetes Engine Cluster Viewer (`roles/container.clusterViewer`)
+
+If you are using the Connect Gateway, you must also have:
+
+-   GKE Hub Viewer (`roles/gkehub.viewer`)
+
 
 ### Via google-github-actions/auth
 

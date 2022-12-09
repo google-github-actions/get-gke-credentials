@@ -32,7 +32,7 @@ const clusterResourceNamePattern = new RegExp(/^projects\/(.+)\/locations\/(.+)\
 // membershipResourceNamePattern is the regular expression to use to match fleet membership
 // name.
 const membershipResourceNamePattern = new RegExp(
-  /^projects\/(.+)\/locations\/(.+)\/memberships\/(.+)$/i,
+  /^projects\/(.+)\/locations\/(.+)\/(?:gkeMemberships|memberships)\/(.+)$/i,
 );
 
 /**
@@ -112,7 +112,7 @@ export class ClusterClient {
     const matches = name.match(membershipResourceNamePattern);
     if (!matches) {
       throw new Error(
-        `Failed to parse membership name "${name}": invalid pattern. Should be of form projects/PROJECT_ID/locations/LOCATION/memberships/MEMBERSHIP_NAME`,
+        `Failed to parse membership name "${name}": invalid pattern. Should be of form projects/PROJECT_ID/locations/LOCATION/gkeMemberships/MEMBERSHIP_NAME or projects/PROJECT_ID/locations/LOCATION/memberships/MEMBERSHIP_NAME`,
       );
     }
     return {
@@ -226,16 +226,83 @@ export class ClusterClient {
   }
 
   /**
-   * Constructs a Connect Gateway endpoint string of form
-   * connectGatewayEndpoint/v1/projects/123/locations/l/memberships/m
+   * Constructs a Connect Gateway endpoint string from the given fleet
+   * membership name.
    *
-   * @param membershipName membership name.
+   * @param name membership name in the format projects/p/locations/l/memberships/m
    * @returns endpoint.
    */
-  async getConnectGWEndpoint(membershipName: string): Promise<string> {
-    const membershipRef = ClusterClient.parseMembershipName(membershipName);
-    const projectNum = await this.projectIDtoNum(membershipRef.projectID);
-    return `${this.connectGatewayHostPath}/projects/${projectNum}/locations/${membershipRef.location}/memberships/${membershipRef.membershipName}`;
+  async getConnectGWEndpoint(name: string): Promise<string> {
+    const membershipURL = `${this.hubEndpoint}/${name}`;
+    const resp = (await this.auth.request({
+      url: membershipURL,
+      headers: {
+        'User-Agent': userAgent,
+      },
+    })) as HubMembershipResponse;
+
+    const membership = resp.data;
+    if (!membership) {
+      throw new Error(`Failed to lookup membership: ${resp}`);
+    }
+
+    // For GKE clusters, the configuration path is gkeMemberships, not
+    // memberships. Googlers, see b/261052807 for more information.
+    let collection = 'memberships';
+    if (membership.endpoint?.gkeCluster) {
+      collection = 'gkeMemberships';
+    }
+
+    // Parse the resulting membership name.
+    const membershipName = ClusterClient.parseMembershipName(membership.name);
+
+    // Extract the project number which is required for the connect gateway.
+    const projectNumber = await this.projectIDtoNum(membershipName.projectID);
+
+    return `${this.connectGatewayHostPath}/projects/${projectNumber}/locations/${membershipName.location}/${collection}/${membershipName.membershipName}`;
+  }
+
+  /**
+   * discoverClusterMembership attempts to discover fleet membership of a
+   * cluster.
+   *
+   * @param clusterName cluster name.
+   * @returns Fleet membership name.
+   */
+  async discoverClusterMembership(clusterName: string): Promise<string> {
+    const clusterResourceLink = `//container.googleapis.com/${this.getResource(clusterName)}`;
+    const projectID = this.#projectID;
+    if (!projectID) {
+      throw new Error(
+        `Failed to get project ID for cluster membership discovery. Try setting "project_id".`,
+      );
+    }
+
+    const url = `${this.hubEndpoint}/projects/${projectID}/locations/global/memberships?filter=endpoint.gkeCluster.resourceLink="${clusterResourceLink}"`;
+    const resp = (await this.auth.request({
+      url: url,
+      headers: {
+        'User-Agent': userAgent,
+      },
+    })) as HubMembershipsResponse;
+
+    const memberships = resp.data.resources;
+    if (!memberships || memberships.length < 1) {
+      throw new Error(
+        `Expected one membership for ${clusterName} in ${projectID}. ` +
+          `Found none. Verify membership by running \`gcloud container fleet memberships list --project ${projectID}\``,
+      );
+    }
+    if (memberships.length > 1) {
+      const membershipNames = memberships.map((m) => m.name).join(',');
+      throw new Error(
+        `Expected one membership for ${clusterName} in ${projectID}. ` +
+          `Found multiple memberships ${membershipNames}. Provide an explicit membership via \`fleet_membership\` input.`,
+      );
+    }
+
+    const membership = memberships[0];
+    return membership.name;
   }
 
   /**
@@ -256,46 +323,6 @@ export class ClusterClient {
   }
 
   /**
-   * discoverClusterMembership attempts to discover
-   * Fleet membership of a cluster.
-   *
-   * @param clusterName cluster name.
-   * @returns Fleet membership name.
-   */
-  async discoverClusterMembership(clusterName: string): Promise<string> {
-    const clusterResourceLink = `//container.googleapis.com/${this.getResource(clusterName)}`;
-    const projectID = this.#projectID;
-    if (!projectID) {
-      throw new Error(
-        `Failed to get project ID for cluster membership discovery. Try setting "project_id".`,
-      );
-    }
-    const url = `${this.hubEndpoint}/projects/${projectID}/locations/global/memberships?filter=endpoint.gkeCluster.resourceLink="${clusterResourceLink}"`;
-    const resp = (await this.auth.request({
-      url: url,
-      headers: {
-        'User-Agent': userAgent,
-      },
-    })) as HubMembershipsListResponse;
-
-    const memberships = resp.data.resources;
-    if (memberships.length < 1) {
-      throw new Error(
-        `Expected one membership for ${clusterName} in ${projectID}. ` +
-          `Found none. Verify membership by running \`gcloud container fleet memberships list --project ${projectID}\``,
-      );
-    }
-    if (memberships.length > 1) {
-      const membershipNames = memberships.map((m) => m.name).join(',');
-      throw new Error(
-        `Expected one membership for ${clusterName} in ${projectID}. ` +
-          `Found multiple memberships ${membershipNames}. Provide an explicit membership via \`fleet_membership\` input.`,
-      );
-    }
-    return memberships[0].name;
-  }
-
-  /**
    * Create kubeconfig for cluster.
    *
    * @param opts Input options. See CreateKubeConfigOptions.
@@ -311,9 +338,10 @@ export class ClusterClient {
       endpoint = cluster.data.privateClusterConfig.privateEndpoint;
     }
 
+    const token = await this.getToken();
     const auth = opts.useAuthProvider
       ? { user: { 'auth-provider': { name: 'gcp' } } }
-      : { user: { token: await this.getToken() } };
+      : { user: { token: token } };
     const contextName = opts.contextName;
 
     const kubeConfig: KubeConfig = {
@@ -412,19 +440,32 @@ export type ClusterResponse = {
 };
 
 /**
- * HubMembershipsListResponse is the response from listing GKE Hub memberships.
+ * HubMembershipsResponse is the response from listing GKE Hub memberships.
  */
-type HubMembershipsListResponse = {
+type HubMembershipsResponse = {
   data: {
-    resources: [
-      {
-        name: string;
-        endpoint: {
-          gkeCluster: {
-            resourceLink: string;
-          };
-        };
-      },
-    ];
+    resources: HubMembership[];
+  };
+};
+
+/**
+ * HubMembershipResponse is the response from getting a GKE Hub membership.
+ */
+type HubMembershipResponse = {
+  data: HubMembership;
+};
+
+/**
+ * HubMembership is a single HubMembership.
+ */
+type HubMembership = {
+  name: string;
+  description: string;
+  uniqueId: string;
+
+  endpoint?: {
+    gkeCluster?: {
+      resourceLink: string;
+    };
   };
 };

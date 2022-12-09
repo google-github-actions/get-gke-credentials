@@ -1,4 +1,4 @@
-name: 'unit'
+name: 'Unit'
 
 on:
   push:
@@ -7,24 +7,27 @@ on:
   pull_request:
     branches:
     - 'main'
+  workflow_dispatch:
 
 concurrency:
   group: '${{ github.workflow }}-${{ github.head_ref || github.ref }}'
   cancel-in-progress: true
 
+permissions:
+  contents: 'read'
+  id-token: 'write'
+
 jobs:
   unit:
-    name: 'unit'
-    runs-on: '${{ matrix.os }}'
-    permissions:
-      contents: 'read'
-      id-token: 'write'
     strategy:
+      fail-fast: false
       matrix:
         os:
         - 'ubuntu-latest'
         - 'windows-latest'
         - 'macos-latest'
+    runs-on: '${{ matrix.os }}'
+
     steps:
     - uses: 'actions/checkout@v3'
 
@@ -38,7 +41,7 @@ jobs:
     - name: 'npm lint'
       # There's no need to run the linter for each operating system, since it
       # will find the same thing 3x and clog up the PR review.
-      if: ${{matrix.os == 'ubuntu-latest'}}
+      if: ${{ matrix.os == 'ubuntu-latest' }}
       run: 'npm run lint'
 
     - uses: 'google-github-actions/auth@main'
