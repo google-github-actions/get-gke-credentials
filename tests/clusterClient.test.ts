@@ -24,9 +24,9 @@ import YAML from 'yaml';
 import * as sinon from 'sinon';
 import { GaxiosResponse } from 'gaxios';
 
-const project = process.env.GET_GKE_CRED_PROJECT;
-const name = process.env.GET_GKE_CRED_CLUSTER_NAME;
-const location = process.env.GKE_AUTH_CLUSTER_LOCATION || 'us-central1-a';
+const project = process.env.TEST_PROJECT_ID;
+const name = process.env.TEST_CLUSTER_NAME;
+const location = process.env.TEST_CLUSTER_LOCATION;
 
 const publicCluster: ClusterResponse = {
   data: {

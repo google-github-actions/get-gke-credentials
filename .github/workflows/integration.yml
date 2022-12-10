@@ -34,14 +34,14 @@ jobs:
     - uses: 'google-github-actions/auth@main'
       with:
         workload_identity_provider: '${{ secrets.WIF_PROVIDER_NAME }}'
-        service_account: '${{ secrets.GET_GKE_CRED_SA_EMAIL }}'
+        service_account: '${{ secrets.SERVICE_ACCOUNT_EMAIL }}'
 
     - name: 'get-gke-credentials'
       uses: './'
       with:
-        project_id: '${{ secrets.GET_GKE_CRED_PROJECT }}'
-        cluster_name: '${{ secrets.GET_GKE_CRED_CLUSTER_NAME }}'
-        location: '${{ secrets.GET_GKE_CRED_CLUSTER_LOCATION }}'
+        project_id: '${{ secrets.PROJECT_ID }}'
+        cluster_name: '${{ secrets.PUBLIC_CLUSTER_NAME }}'
+        location: '${{ secrets.PUBLIC_CLUSTER_LOCATION }}'
 
     - name: 'kubectl'
       run: |-
@@ -63,14 +63,14 @@ jobs:
     - uses: 'google-github-actions/auth@main'
       with:
         workload_identity_provider: '${{ secrets.WIF_PROVIDER_NAME }}'
-        service_account: '${{ secrets.GET_GKE_CRED_SA_EMAIL }}'
+        service_account: '${{ secrets.SERVICE_ACCOUNT_EMAIL }}'
 
     - name: 'get-gke-credentials'
       uses: './'
       with:
-        project_id: '${{ secrets.GET_GKE_CRED_PROJECT }}'
-        cluster_name: '${{ secrets.GET_GKE_PRIV_CLUSTER_NAME }}'
-        location: '${{ secrets.GET_GKE_PRIV_CLUSTER_LOCATION }}'
+        project_id: '${{ secrets.PROJECT_ID }}'
+        cluster_name: '${{ secrets.PRIVATE_CLUSTER_NAME }}'
+        location: '${{ secrets.PRIVATE_CLUSTER_LOCATION }}'
         use_connect_gateway: 'true'
 
     - name: 'kubectl'
