@@ -16,8 +16,8 @@
 
 import {
   exportVariable,
-  getBooleanInput,
   getInput,
+  debug as logDebug,
   info as logInfo,
   setFailed,
 } from '@actions/core';
@@ -38,10 +38,10 @@ async function run(): Promise<void> {
     const clusterName = ClusterClient.parseResourceName(
       getInput('cluster_name', { required: true }),
     );
-    const useAuthProvider = getBooleanInput('use_auth_provider');
-    const useInternalIP = getBooleanInput('use_internal_ip');
+    const useAuthProvider = toBoolean(getInput('use_auth_provider'));
+    const useInternalIP = toBoolean(getInput('use_internal_ip'));
     let contextName = getInput('context_name');
-    const useConnectGateway = getBooleanInput('use_connect_gateway');
+    const useConnectGateway = toBoolean(getInput('use_connect_gateway'));
 
     // Only one of use_connect_gateway or use_internal_ip should be provided
     if (useInternalIP && useConnectGateway) {
@@ -50,14 +50,20 @@ async function run(): Promise<void> {
       );
     }
 
+    // Ensure a workspace is set.
+    const workspace = process.env.GITHUB_WORKSPACE;
+    if (!workspace) {
+      throw new Error('$GITHUB_WORKSPACE is not set');
+    }
+
     // Pick the best project ID.
     if (!projectID) {
       if (clusterName.projectID) {
         projectID = clusterName.projectID;
-        logInfo(`Extracted projectID "${projectID}" from cluster resource name`);
+        logDebug(`Extracted projectID "${projectID}" from cluster resource name`);
       } else if (process.env?.GCLOUD_PROJECT) {
         projectID = process.env.GCLOUD_PROJECT;
-        logInfo(`Extracted project ID "${projectID}" from $GCLOUD_PROJECT`);
+        logDebug(`Extracted project ID "${projectID}" from $GCLOUD_PROJECT`);
       } else {
         throw new Error(
           `Failed to extract project ID, please set the "project_id" input, ` +
@@ -71,7 +77,7 @@ async function run(): Promise<void> {
     if (!location) {
       if (clusterName.location) {
         location = clusterName.location;
-        logInfo(`Extracted location "${location}" from cluster resource name`);
+        logDebug(`Extracted location "${location}" from cluster resource name`);
       } else {
         throw new Error(
           `Failed to extract location, please set the "location" input or ` +
@@ -84,6 +90,7 @@ async function run(): Promise<void> {
     if (!contextName) {
       contextName = `gke_${projectID}_${location}_${clusterName.id}`;
     }
+    logDebug(`Using context name: ${contextName}`);
 
     // Create Container Cluster client
     const client = new ClusterClient({
@@ -93,17 +100,20 @@ async function run(): Promise<void> {
 
     // Get Cluster object
     const clusterData = await client.getCluster(clusterName.id);
+    logDebug(`Found cluster data: ${JSON.stringify(clusterData, null, 2)}`);
 
     // If using Connect Gateway, get endpoint
     let connectGWEndpoint;
     if (useConnectGateway) {
+      logDebug(`Using connect gateway`);
+
       const fleetMembershipName =
         presence(getInput('fleet_membership_name')) ||
         (await client.discoverClusterMembership(clusterName.id));
-      logInfo(`Using fleet membership "${fleetMembershipName}"`);
+      logDebug(`Using fleet membership: ${fleetMembershipName}`);
 
       connectGWEndpoint = await client.getConnectGWEndpoint(fleetMembershipName);
-      logInfo(`Using Connect Gateway endpoint "${connectGWEndpoint}"`);
+      logDebug(`Using connect gateway endpoint: ${connectGWEndpoint}`);
     }
 
     // Create KubeConfig
@@ -117,15 +127,10 @@ async function run(): Promise<void> {
 
     // Write kubeconfig to disk
     try {
-      const workspace = process.env.GITHUB_WORKSPACE;
-      if (!workspace) {
-        throw new Error('Missing $GITHUB_WORKSPACE!');
-      }
-
       const kubeConfigPath = await writeSecureFile(randomFilepath(workspace), kubeConfig);
       exportVariable('KUBECONFIG', kubeConfigPath);
       exportVariable('KUBE_CONFIG_PATH', kubeConfigPath);
-      logInfo(`Successfully created and exported "KUBECONFIG" at ${kubeConfigPath}`);
+      logInfo(`Successfully created and exported "KUBECONFIG" at: ${kubeConfigPath}`);
     } catch (err) {
       const msg = errorMessage(err);
       throw new Error(`Failed to write Kubernetes config file: ${msg}`);
@@ -134,6 +139,10 @@ async function run(): Promise<void> {
     const msg = errorMessage(err);
     setFailed(`google-github-actions/get-gke-credentials failed with: ${msg}`);
   }
+}
+
+function toBoolean(input?: string): boolean {
+  return (input || '').trim().toLowerCase() === 'true';
 }
 
 if (require.main === module) {
