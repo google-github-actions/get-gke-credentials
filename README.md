@@ -91,6 +91,11 @@ jobs:
     for generating the Connect Gateway endpoint. This only applies if
     "use_connect_gateway" is true. Defaults to auto discovery if empty.
 
+-   `quota_project_id` - (Optional) Project ID from which to pull quota. The
+    caller must have `serviceusage.services.use` permission on the project. If
+    unspecified, this defaults to the project of the authenticated principle.
+    This is an advanced setting, most users should leave this blank.
+
 ## Outputs
 
 - Exports env var `KUBECONFIG` which is set to the generated `kubeconfig` file path.

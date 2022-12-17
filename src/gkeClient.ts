@@ -16,6 +16,7 @@
 
 import { presence } from '@google-github-actions/actions-utils';
 import { GoogleAuth } from 'google-auth-library';
+import { Headers } from 'gaxios';
 import YAML from 'yaml';
 
 // Do not listen to the linter - this can NOT be rewritten as an ES6 import statement.
@@ -43,6 +44,7 @@ const membershipResourceNamePattern = new RegExp(
  */
 type ClientOptions = {
   projectID?: string;
+  quotaProjectID?: string;
   location?: string;
 };
 
@@ -130,6 +132,7 @@ export class ClusterClient {
    * resource name.
    */
   readonly #projectID?: string;
+  readonly #quotaProjectID?: string;
   readonly #location?: string;
 
   readonly defaultEndpoint = 'https://container.googleapis.com/v1';
@@ -148,6 +151,7 @@ export class ClusterClient {
     });
 
     this.#projectID = opts?.projectID;
+    this.#quotaProjectID = opts?.quotaProjectID;
     this.#location = opts?.location;
   }
 
@@ -209,9 +213,7 @@ export class ClusterClient {
     const url = `${this.cloudResourceManagerEndpoint}/projects/${projectID}`;
     const resp = (await this.auth.request({
       url: url,
-      headers: {
-        'User-Agent': userAgent,
-      },
+      headers: this.#defaultHeaders(),
     })) as { data: { name: string } };
 
     // projectRef of form projects/<project-num>"
@@ -236,9 +238,7 @@ export class ClusterClient {
     const membershipURL = `${this.hubEndpoint}/${name}`;
     const resp = (await this.auth.request({
       url: membershipURL,
-      headers: {
-        'User-Agent': userAgent,
-      },
+      headers: this.#defaultHeaders(),
     })) as HubMembershipResponse;
 
     const membership = resp.data;
@@ -281,9 +281,7 @@ export class ClusterClient {
     const url = `${this.hubEndpoint}/projects/${projectID}/locations/global/memberships?filter=endpoint.gkeCluster.resourceLink="${clusterResourceLink}"`;
     const resp = (await this.auth.request({
       url: url,
-      headers: {
-        'User-Agent': userAgent,
-      },
+      headers: this.#defaultHeaders(),
     })) as HubMembershipsResponse;
 
     const memberships = resp.data.resources;
@@ -315,9 +313,7 @@ export class ClusterClient {
     const url = `${this.defaultEndpoint}/${this.getResource(clusterName)}`;
     const resp = (await this.auth.request({
       url: url,
-      headers: {
-        'User-Agent': userAgent,
-      },
+      headers: this.#defaultHeaders(),
     })) as ClusterResponse;
     return resp;
   }
@@ -371,6 +367,17 @@ export class ClusterClient {
       'users': [{ ...{ name: cluster.data.name }, ...auth }],
     };
     return YAML.stringify(kubeConfig);
+  }
+
+  #defaultHeaders(): Headers {
+    const h: Headers = {
+      'User-Agent': userAgent,
+    };
+
+    if (this.#quotaProjectID) {
+      h['X-Goog-User-Project'] = this.#quotaProjectID;
+    }
+    return h;
   }
 }
 
