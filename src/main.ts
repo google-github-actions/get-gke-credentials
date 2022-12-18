@@ -23,9 +23,10 @@ import {
 } from '@actions/core';
 import {
   errorMessage,
+  parseBoolean,
+  presence,
   randomFilepath,
   writeSecureFile,
-  presence,
 } from '@google-github-actions/actions-utils';
 
 import { ClusterClient } from './gkeClient';
@@ -39,10 +40,10 @@ async function run(): Promise<void> {
     const clusterName = ClusterClient.parseResourceName(
       getInput('cluster_name', { required: true }),
     );
-    const useAuthProvider = toBoolean(getInput('use_auth_provider'));
-    const useInternalIP = toBoolean(getInput('use_internal_ip'));
+    const useAuthProvider = parseBoolean(getInput('use_auth_provider'));
+    const useInternalIP = parseBoolean(getInput('use_internal_ip'));
     let contextName = getInput('context_name');
-    const useConnectGateway = toBoolean(getInput('use_connect_gateway'));
+    const useConnectGateway = parseBoolean(getInput('use_connect_gateway'));
 
     // Only one of use_connect_gateway or use_internal_ip should be provided
     if (useInternalIP && useConnectGateway) {
@@ -141,10 +142,6 @@ async function run(): Promise<void> {
     const msg = errorMessage(err);
     setFailed(`google-github-actions/get-gke-credentials failed with: ${msg}`);
   }
-}
-
-function toBoolean(input?: string): boolean {
-  return (input || '').trim().toLowerCase() === 'true';
 }
 
 if (require.main === module) {
