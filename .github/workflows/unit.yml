@@ -46,12 +46,12 @@ jobs:
 
     - uses: 'google-github-actions/auth@main'
       with:
-        workload_identity_provider: '${{ secrets.WIF_PROVIDER_NAME }}'
-        service_account: '${{ secrets.SERVICE_ACCOUNT_EMAIL }}'
+        workload_identity_provider: '${{ vars.WIF_PROVIDER_NAME }}'
+        service_account: '${{ vars.SERVICE_ACCOUNT_EMAIL }}'
 
     - name: 'npm test'
       env:
-        TEST_PROJECT_ID: '${{ secrets.PROJECT_ID }}'
-        TEST_CLUSTER_NAME: '${{ secrets.PUBLIC_CLUSTER_NAME }}'
-        TEST_CLUSTER_LOCATION: '${{ secrets.PUBLIC_CLUSTER_LOCATION }}'
+        TEST_PROJECT_ID: '${{ vars.PROJECT_ID }}'
+        TEST_CLUSTER_NAME: '${{ vars.PUBLIC_CLUSTER_NAME }}'
+        TEST_CLUSTER_LOCATION: '${{ vars.PUBLIC_CLUSTER_LOCATION }}'
       run: 'npm run test'
