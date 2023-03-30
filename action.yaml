@@ -84,6 +84,11 @@ inputs:
       advanced setting, most users should leave this blank.
     required: false
 
+outputs:
+  kubeconfig_path:
+    description: |-
+      Path on the local filesystem where the generated KUBECONFIG file resides.
+
 branding:
   icon: 'lock'
   color: 'blue'

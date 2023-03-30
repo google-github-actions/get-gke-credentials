@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { join as pathjoin } from 'path';
+
 import {
   exportVariable,
   getInput,
@@ -25,6 +27,7 @@ import {
   errorMessage,
   parseBoolean,
   presence,
+  randomFilename,
   randomFilepath,
   writeSecureFile,
 } from '@google-github-actions/actions-utils';
@@ -53,8 +56,8 @@ async function run(): Promise<void> {
     }
 
     // Ensure a workspace is set.
-    const workspace = process.env.GITHUB_WORKSPACE;
-    if (!workspace) {
+    const githubWorkspace = process.env.GITHUB_WORKSPACE;
+    if (!githubWorkspace) {
       throw new Error('$GITHUB_WORKSPACE is not set');
     }
 
@@ -130,7 +133,11 @@ async function run(): Promise<void> {
 
     // Write kubeconfig to disk
     try {
-      const kubeConfigPath = await writeSecureFile(randomFilepath(workspace), kubeConfig);
+      const filename = 'gha-kubeconfig-' + randomFilename(8);
+      const kubeConfigPath = pathjoin(githubWorkspace, filename);
+      logDebug(`Creating KUBECONFIG at ${kubeConfigPath}`);
+      await writeSecureFile(kubeConfigPath, kubeConfig);
+
       exportVariable('KUBECONFIG', kubeConfigPath);
       exportVariable('KUBE_CONFIG_PATH', kubeConfigPath);
       logInfo(`Successfully created and exported "KUBECONFIG" at: ${kubeConfigPath}`);

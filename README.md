@@ -16,6 +16,15 @@ This action requires:
     runners, you must use runner version [2.285.0](https://github.com/actions/virtual-environments)
     or newer.
 
+-   If you plan to create binaries, containers, pull requests, or other
+    releases, add the following to your .gitignore to prevent accidentially
+    committing the KUBECONFIG to your release artifact:
+
+    ```text
+    # Ignore generated kubeconfig from google-github-actions/get-gke-credentials
+    gha-kubeconfig-*
+    ```
+
 ## Usage
 
 ```yaml
@@ -83,7 +92,11 @@ jobs:
 
 ## Outputs
 
-- Exports env var `KUBECONFIG` which is set to the generated `kubeconfig` file path.
+-   `kubeconfig_path` - Path on the local filesystem where the generated
+    KUBECONFIG file resides.
+
+-   Exports env var `KUBECONFIG` which is set to the generated `kubeconfig` file
+    path.
 
 ## Authorization
 
