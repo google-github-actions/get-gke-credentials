@@ -28,7 +28,6 @@ import {
   parseBoolean,
   presence,
   randomFilename,
-  randomFilepath,
   writeSecureFile,
 } from '@google-github-actions/actions-utils';
 
