@@ -17,9 +17,10 @@ This action requires:
     Authorization section below for more information. You also need to
     [create a GKE cluster](https://cloud.google.com/kubernetes-engine/docs/quickstart).
 
--   This action runs using Node 16. If you are using self-hosted GitHub Actions
-    runners, you must use runner version [2.285.0](https://github.com/actions/virtual-environments)
-    or newer.
+-   This action runs using Node 20. If you are using self-hosted GitHub Actions
+    runners, you must use a [runner
+    version](https://github.com/actions/virtual-environments) that supports this
+    version or newer.
 
 -   If you plan to create binaries, containers, pull requests, or other
     releases, add the following to your .gitignore to prevent accidentially
