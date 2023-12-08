@@ -3,10 +3,12 @@ name: 'integration'
 on:
   push:
     branches:
-    - 'main'
+      - 'main'
+      - 'release/**/*'
   pull_request:
     branches:
-    - 'main'
+      - 'main'
+      - 'release/**/*'
 
 concurrency:
   group: '${{ github.workflow }}-${{ github.head_ref || github.ref }}'
