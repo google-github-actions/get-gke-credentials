@@ -6,10 +6,8 @@
   "scripts": {
     "build": "ncc build -m src/main.ts",
     "lint": "eslint . --ext .ts,.tsx",
-    "fixlint": "eslint . --ext .ts,.tsx --fix",
     "format": "prettier --write **/*.ts",
-    "test": "mocha -r ts-node/register -t 600s 'tests/*.test.ts'",
-    "cleanup": "mocha -r ts-node/register -t 240s 'tests/cleaner/cleanTestFunctions.test.ts'"
+    "test": "node --require ts-node/register --test-reporter spec --test tests/clusterClient.test.ts"
   },
   "repository": {
     "type": "git",
@@ -26,27 +24,21 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@actions/core": "^1.10.1",
-    "@google-github-actions/actions-utils": "^0.4.9",
-    "google-auth-library": "^9.2.0",
+    "@google-github-actions/actions-utils": "^0.4.10",
+    "google-auth-library": "^9.4.1",
     "yaml": "^2.3.4"
   },
   "devDependencies": {
     "@kubernetes/client-node": "^0.20.0",
-    "@types/chai": "^4.3.10",
-    "@types/mocha": "^10.0.4",
-    "@types/node": "^20.9.0",
-    "@types/sinon": "^17.0.1",
-    "@typescript-eslint/eslint-plugin": "^6.10.0",
-    "@typescript-eslint/parser": "^6.10.0",
+    "@types/node": "^20.10.4",
+    "@typescript-eslint/eslint-plugin": "^6.13.2",
+    "@typescript-eslint/parser": "^6.13.2",
     "@vercel/ncc": "^0.38.1",
-    "chai": "^4.3.10",
-    "eslint": "^8.53.0",
-    "eslint-config-prettier": "^9.0.0",
+    "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.0.1",
-    "mocha": "^10.2.0",
-    "prettier": "^3.0.3",
-    "sinon": "^17.0.1",
-    "ts-node": "^10.9.1",
-    "typescript": "^5.2.2"
+    "eslint": "^8.55.0",
+    "prettier": "^3.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
   }
 }

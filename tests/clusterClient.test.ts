@@ -14,19 +14,28 @@
  * limitations under the License.
  */
 
-import { expect } from 'chai';
-import 'mocha';
+import { describe, it } from 'node:test';
+import assert from 'node:assert';
 
 import crypto from 'crypto';
-
-import { errorMessage } from '@google-github-actions/actions-utils';
 import YAML from 'yaml';
-import * as sinon from 'sinon';
-import { GaxiosResponse } from 'gaxios';
 
-const project = process.env.TEST_PROJECT_ID;
-const name = process.env.TEST_CLUSTER_NAME;
-const location = process.env.TEST_CLUSTER_LOCATION;
+import { ClusterClient, ClusterResponse } from '../src/gkeClient';
+
+const skipIfMissingEnvs = (...keys: string[]): { skip: string } | undefined => {
+  const missingKeys: string[] = [];
+
+  for (const key of keys) {
+    if (!(key in process.env)) {
+      missingKeys.push(key);
+    }
+  }
+
+  if (missingKeys.length > 0) {
+    return { skip: `missing $${missingKeys.join(', $')}` };
+  }
+  return undefined;
+};
 
 const publicCluster: ClusterResponse = {
   data: {
@@ -54,14 +63,8 @@ const privateCluster: ClusterResponse = {
   },
 };
 
-import { ClusterClient, ClusterResponse } from '../src/gkeClient';
-
-describe('Cluster', function () {
-  afterEach(() => {
-    sinon.restore();
-  });
-
-  describe('.parseResourceName', () => {
+describe('ClusterClient', async () => {
+  describe('.parseResourceName', async () => {
     const cases = [
       {
         name: 'empty string',
@@ -100,18 +103,19 @@ describe('Cluster', function () {
 
     cases.forEach((tc) => {
       it(tc.name, async () => {
-        if (tc.expected) {
-          expect(ClusterClient.parseResourceName(tc.input)).to.eql(tc.expected);
-        } else if (tc.error) {
-          expect(() => {
+        if (tc.error) {
+          assert.throws(() => {
             ClusterClient.parseResourceName(tc.input);
-          }).to.throw(tc.error);
+          }, tc.error);
+        } else {
+          const result = ClusterClient.parseResourceName(tc.input);
+          assert.deepStrictEqual(result, tc.expected);
         }
       });
     });
   });
 
-  describe('.parseMembershipName', () => {
+  describe('.parseMembershipName', async () => {
     const cases = [
       {
         name: 'empty string',
@@ -146,53 +150,68 @@ describe('Cluster', function () {
 
     cases.forEach((tc) => {
       it(tc.name, async () => {
-        if (tc.expected) {
-          expect(ClusterClient.parseMembershipName(tc.input)).to.eql(tc.expected);
-        } else if (tc.error) {
-          expect(() => {
+        if (tc.error) {
+          assert.throws(() => {
             ClusterClient.parseMembershipName(tc.input);
-          }).to.throw(tc.error);
+          }, tc.error);
+        } else {
+          const result = ClusterClient.parseMembershipName(tc.input);
+          assert.deepStrictEqual(result, tc.expected);
         }
       });
     });
   });
 
-  it('initializes with ADC', async function () {
-    if (!process.env.GCLOUD_PROJECT) this.skip();
+  describe(
+    '#getToken',
+    skipIfMissingEnvs('TEST_PROJECT_ID', 'TEST_CLUSTER_ID', 'TEST_CLUSTER_LOCATION'),
+    async () => {
+      it('can get token', async () => {
+        const testProjectID = process.env.TEST_PROJECT_ID!;
+        const testClusterLocation = process.env.TEST_CLUSTER_LOCATION!;
 
-    const client = new ClusterClient({ location: location });
-    expect(client.auth.jsonContent).eql(null);
-    expect(await client.getToken()).to.be;
-  });
+        const client = new ClusterClient({
+          projectID: testProjectID,
+          location: testClusterLocation,
+        });
 
-  it('can get cluster', async function () {
-    if (!name) this.skip();
+        const token = await client.getToken();
+        assert.ok(token);
+      });
+    },
+  );
 
-    const client = new ClusterClient({
-      projectID: project,
-      location: location,
-    });
-    const result = await client.getCluster(name);
+  describe(
+    '#getCluster',
+    skipIfMissingEnvs('TEST_PROJECT_ID', 'TEST_CLUSTER_ID', 'TEST_CLUSTER_LOCATION'),
+    async () => {
+      const testProjectID = process.env.TEST_PROJECT_ID!;
+      const testClusterName = process.env.TEST_CLUSTER_NAME!;
+      const testClusterLocation = process.env.TEST_CLUSTER_LOCATION!;
 
-    expect(result).to.not.eql(null);
-    expect(result.data.endpoint).to.not.be.null;
-    expect(result.data.masterAuth.clusterCaCertificate).to.not.be.null;
-  });
+      it('can get cluster', async () => {
+        const client = new ClusterClient({
+          projectID: testProjectID,
+          location: testClusterLocation,
+        });
 
-  it('can get cluster by full resource name', async function () {
-    if (!name) this.skip();
+        const result = await client.getCluster(testClusterName);
+        assert.ok('endpoint' in (result?.data ?? {}));
+        assert.ok('clusterCaCertificate' in (result?.data?.masterAuth ?? {}));
+      });
 
-    const resourceName = `projects/${project}/locations/${location}/clusters/${name}`;
-    const client = new ClusterClient();
-    const result = await client.getCluster(resourceName);
+      it('can get cluster by full resource name', async () => {
+        const resourceName = `projects/${testProjectID}/locations/${testClusterLocation}/clusters/${testClusterName}`;
+        const client = new ClusterClient();
 
-    expect(result).to.not.eql(null);
-    expect(result.data.endpoint).to.not.be.null;
-    expect(result.data.masterAuth.clusterCaCertificate).to.not.be.null;
-  });
+        const result = await client.getCluster(resourceName);
+        assert.ok('endpoint' in (result?.data ?? {}));
+        assert.ok('clusterCaCertificate' in (result?.data?.masterAuth ?? {}));
+      });
+    },
+  );
 
-  describe('.discoverClusterMembership', () => {
-    const client = new ClusterClient({ projectID: 'foo' });
+  describe('#discoverClusterMembership', async () => {
     const cases = [
       {
         name: 'valid',
@@ -230,27 +249,28 @@ describe('Cluster', function () {
     ];
 
     cases.forEach((tc) => {
-      it(tc.name, async () => {
-        sinon.stub(client.auth, 'request').resolves({ data: tc.resp } as GaxiosResponse);
-        if (tc.expected) {
-          const projectNum = await client.discoverClusterMembership(
+      it(tc.name, async (t) => {
+        const client = new ClusterClient({ projectID: 'foo' });
+
+        t.mock.method(client.auth, 'request', async () => {
+          return { data: tc.resp };
+        });
+
+        if (tc.error) {
+          assert.rejects(async () => {
+            await client.discoverClusterMembership('projects/p/locations/l/clusters/c');
+          }, tc.error);
+        } else {
+          const result = await client.discoverClusterMembership(
             'projects/p/locations/l/clusters/c',
           );
-          expect(projectNum).to.eql(tc.expected);
-        } else if (tc.error) {
-          try {
-            await client.discoverClusterMembership('projects/p/locations/l/clusters/c');
-          } catch (err: unknown) {
-            const msg = errorMessage(err);
-            expect(msg).to.include(tc.error);
-          }
+          assert.deepStrictEqual(result, tc.expected);
         }
       });
     });
   });
 
-  describe('.getProjectNumFromID', () => {
-    const client = new ClusterClient();
+  describe('#getProjectNumFromID', async () => {
     const cases = [
       {
         name: 'valid',
@@ -267,163 +287,156 @@ describe('Cluster', function () {
     ];
 
     cases.forEach((tc) => {
-      it(tc.name, async () => {
-        sinon.stub(client.auth, 'request').resolves({ data: tc.resp } as GaxiosResponse);
-        if (tc.expected) {
-          const projectNum = await client.projectIDtoNum(tc.projectID);
-          expect(projectNum).to.eql(tc.expected);
-        } else if (tc.error) {
-          try {
+      it(tc.name, async (t) => {
+        const client = new ClusterClient();
+
+        t.mock.method(client.auth, 'request', async () => {
+          return { data: tc.resp };
+        });
+
+        if (tc.error) {
+          assert.rejects(async () => {
             await client.projectIDtoNum(tc.projectID);
-          } catch (err: unknown) {
-            const msg = errorMessage(err);
-            expect(msg).to.include(tc.error);
-          }
+          }, tc.error);
+        } else {
+          const result = await client.projectIDtoNum(tc.projectID);
+          assert.deepStrictEqual(result, tc.expected);
         }
       });
     });
   });
 
-  it('can get token', async function () {
-    const client = new ClusterClient({
-      projectID: project,
-      location: location,
-    });
-    const token = await client.getToken();
+  describe(
+    '#createKubeConfig',
+    skipIfMissingEnvs('TEST_PROJECT_ID', 'TEST_CLUSTER_ID', 'TEST_CLUSTER_LOCATION'),
+    async () => {
+      const testProjectID = process.env.TEST_PROJECT_ID!;
+      const testClusterLocation = process.env.TEST_CLUSTER_LOCATION!;
 
-    expect(token).to.not.eql(null);
-  });
+      it('can get generate kubeconfig with token for public clusters', async () => {
+        const contextName = crypto.randomBytes(12).toString('hex');
+        const client = new ClusterClient({
+          projectID: testProjectID,
+          location: testClusterLocation,
+        });
+        const kubeconfig = YAML.parse(
+          await client.createKubeConfig({
+            useAuthProvider: false,
+            useInternalIP: false,
+            clusterData: publicCluster,
+            contextName: contextName,
+          }),
+        );
 
-  it('can get generate kubeconfig with token for public clusters', async function () {
-    const contextName = crypto.randomBytes(12).toString('hex');
-    const client = new ClusterClient({
-      projectID: project,
-      location: location,
-    });
-    const kubeconfig = YAML.parse(
-      await client.createKubeConfig({
-        useAuthProvider: false,
-        useInternalIP: false,
-        clusterData: publicCluster,
-        contextName: contextName,
-      }),
-    );
+        const cluster = kubeconfig.clusters?.at(0);
+        const user = kubeconfig.users?.at(0);
 
-    expect(kubeconfig.clusters[0].name).to.eql(publicCluster.data.name);
-    expect(kubeconfig.clusters[0].cluster['certificate-authority-data']).to.eql(
-      publicCluster.data.masterAuth.clusterCaCertificate,
-    );
-    expect(kubeconfig.clusters[0].cluster.server).to.eql(`https://${publicCluster.data.endpoint}`);
-    expect(kubeconfig['current-context']).to.eql(contextName);
-    expect(kubeconfig.users[0].name).to.eql(publicCluster.data.name);
-    expect(kubeconfig.users[0].user.token).to.be.not.null;
-    expect(kubeconfig.users[0].user).to.not.have.property('auth-provider');
-  });
+        assert.deepStrictEqual(kubeconfig?.['current-context'], contextName);
 
-  it('can get generate kubeconfig with auth plugin for public clusters', async function () {
-    const contextName = crypto.randomBytes(12).toString('hex');
-    const client = new ClusterClient({
-      projectID: project,
-      location: location,
-    });
-    const kubeconfig = YAML.parse(
-      await client.createKubeConfig({
-        useAuthProvider: true,
-        useInternalIP: false,
-        clusterData: publicCluster,
-        contextName: contextName,
-      }),
-    );
+        assert.deepStrictEqual(cluster?.name, publicCluster?.data?.name);
+        assert.deepStrictEqual(
+          cluster?.cluster?.['certificate-authority-data'],
+          publicCluster.data?.masterAuth?.clusterCaCertificate,
+        );
+        assert.deepStrictEqual(
+          cluster?.cluster?.server,
+          `https://${publicCluster?.data?.endpoint}`,
+        );
 
-    expect(kubeconfig.clusters[0].name).to.eql(publicCluster.data.name);
-    expect(kubeconfig.clusters[0].cluster['certificate-authority-data']).to.eql(
-      publicCluster.data.masterAuth.clusterCaCertificate,
-    );
-    expect(kubeconfig.clusters[0].cluster.server).to.eql(`https://${publicCluster.data.endpoint}`);
-    expect(kubeconfig['current-context']).to.eql(contextName);
-    expect(kubeconfig.users[0].name).to.eql(publicCluster.data.name);
-    expect(kubeconfig.users[0].user['auth-provider'].name).to.eql('gcp');
-    expect(kubeconfig.users[0].user).to.not.have.property('token');
-  });
+        assert.deepStrictEqual(user?.name, publicCluster?.data?.name);
+        assert.ok(user?.user?.token);
+      });
 
-  it('can get generate kubeconfig with token for private clusters', async function () {
-    const contextName = crypto.randomBytes(12).toString('hex');
-    const client = new ClusterClient({
-      projectID: project,
-      location: location,
-    });
-    const kubeconfig = YAML.parse(
-      await client.createKubeConfig({
-        useAuthProvider: false,
-        useInternalIP: true,
-        clusterData: privateCluster,
-        contextName: contextName,
-      }),
-    );
+      it('can get generate kubeconfig with auth plugin for public clusters', async () => {
+        const contextName = crypto.randomBytes(12).toString('hex');
+        const client = new ClusterClient({
+          projectID: testProjectID,
+          location: testClusterLocation,
+        });
+        const kubeconfig = YAML.parse(
+          await client.createKubeConfig({
+            useAuthProvider: true,
+            useInternalIP: false,
+            clusterData: publicCluster,
+            contextName: contextName,
+          }),
+        );
 
-    expect(kubeconfig.clusters[0].name).to.eql(privateCluster.data.name);
-    expect(kubeconfig.clusters[0].cluster['certificate-authority-data']).to.eql(
-      privateCluster.data.masterAuth.clusterCaCertificate,
-    );
-    expect(kubeconfig.clusters[0].cluster.server).to.eql(
-      `https://${privateCluster.data.privateClusterConfig.privateEndpoint}`,
-    );
-    expect(kubeconfig['current-context']).to.eql(contextName);
-    expect(kubeconfig.users[0].name).to.eql(privateCluster.data.name);
-    expect(kubeconfig.users[0].user.token).to.be.not.null;
-    expect(kubeconfig.users[0].user).to.not.have.property('auth-provider');
-  });
+        const cluster = kubeconfig.clusters?.at(0);
+        const user = kubeconfig.users?.at(0);
 
-  it('can get generate kubeconfig with auth plugin for private clusters', async function () {
-    const contextName = crypto.randomBytes(12).toString('hex');
-    const client = new ClusterClient({
-      projectID: project,
-      location: location,
-    });
-    const kubeconfig = YAML.parse(
-      await client.createKubeConfig({
-        useAuthProvider: true,
-        useInternalIP: true,
-        clusterData: privateCluster,
-        contextName: contextName,
-      }),
-    );
+        assert.deepStrictEqual(kubeconfig?.['current-context'], contextName);
 
-    expect(kubeconfig.clusters[0].name).to.eql(privateCluster.data.name);
-    expect(kubeconfig.clusters[0].cluster['certificate-authority-data']).to.eql(
-      privateCluster.data.masterAuth.clusterCaCertificate,
-    );
-    expect(kubeconfig.clusters[0].cluster.server).to.eql(
-      `https://${privateCluster.data.privateClusterConfig.privateEndpoint}`,
-    );
-    expect(kubeconfig['current-context']).to.eql(contextName);
-    expect(kubeconfig.users[0].name).to.eql(privateCluster.data.name);
-    expect(kubeconfig.users[0].user['auth-provider'].name).to.eql('gcp');
-    expect(kubeconfig.users[0].user).to.not.have.property('token');
-  });
+        assert.deepStrictEqual(cluster?.name, publicCluster?.data?.name);
+        assert.deepStrictEqual(
+          cluster?.cluster?.['certificate-authority-data'],
+          publicCluster.data?.masterAuth?.clusterCaCertificate,
+        );
+        assert.deepStrictEqual(
+          cluster?.cluster?.server,
+          `https://${publicCluster?.data?.endpoint}`,
+        );
 
-  it('can generate kubeconfig with connect gateway', async function () {
-    const contextName = crypto.randomBytes(12).toString('hex');
-    const client = new ClusterClient({
-      projectID: project,
-      location: location,
-    });
-    const kubeconfig = YAML.parse(
-      await client.createKubeConfig({
-        useAuthProvider: false,
-        useInternalIP: false,
-        connectGWEndpoint: 'foo',
-        clusterData: privateCluster,
-        contextName: contextName,
-      }),
-    );
+        assert.deepStrictEqual(user?.name, publicCluster?.data?.name);
+        assert.deepStrictEqual(user?.user?.['auth-provider'], 'gcp');
+      });
 
-    expect(kubeconfig.clusters[0].name).to.eql(privateCluster.data.name);
-    expect(kubeconfig.clusters[0].cluster['certificate-authority-data']).to.not.exist;
-    expect(kubeconfig.clusters[0].cluster.server).to.eql(`https://foo`);
-    expect(kubeconfig['current-context']).to.eql(contextName);
-    expect(kubeconfig.users[0].name).to.eql(privateCluster.data.name);
-    expect(kubeconfig.users[0].user).to.not.have.property('auth-provider');
-    expect(kubeconfig.users[0].user).to.have.property('token');
-  });
+      it('can get generate kubeconfig with token for private clusters', async () => {
+        const contextName = crypto.randomBytes(12).toString('hex');
+        const client = new ClusterClient({
+          projectID: testProjectID,
+          location: testClusterLocation,
+        });
+        const kubeconfig = YAML.parse(
+          await client.createKubeConfig({
+            useAuthProvider: false,
+            useInternalIP: true,
+            clusterData: privateCluster,
+            contextName: contextName,
+          }),
+        );
+
+        const cluster = kubeconfig.clusters?.at(0);
+        const user = kubeconfig.users?.at(0);
+
+        assert.deepStrictEqual(kubeconfig?.['current-context'], contextName);
+
+        assert.deepStrictEqual(cluster?.name, privateCluster?.data?.name);
+        assert.deepStrictEqual(
+          cluster?.cluster?.['certificate-authority-data'],
+          privateCluster.data?.masterAuth?.clusterCaCertificate,
+        );
+        assert.deepStrictEqual(
+          cluster?.cluster?.server,
+          `https://${privateCluster?.data?.privateClusterConfig?.privateEndpoint}`,
+        );
+
+        assert.deepStrictEqual(user?.name, privateCluster?.data?.name);
+      });
+
+      it('can generate kubeconfig with connect gateway', async () => {
+        const contextName = crypto.randomBytes(12).toString('hex');
+        const client = new ClusterClient({
+          projectID: testProjectID,
+          location: testClusterLocation,
+        });
+        const kubeconfig = YAML.parse(
+          await client.createKubeConfig({
+            useAuthProvider: false,
+            useInternalIP: false,
+            connectGWEndpoint: 'foo',
+            clusterData: privateCluster,
+            contextName: contextName,
+          }),
+        );
+
+        const cluster = kubeconfig.clusters?.at(0);
+
+        assert.deepStrictEqual(kubeconfig?.['current-context'], contextName);
+
+        assert.deepStrictEqual(cluster?.name, privateCluster.data.name);
+        assert.deepStrictEqual(cluster?.server, 'https://foo');
+      });
+    },
+  );
 });
