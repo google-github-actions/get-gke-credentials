@@ -42,13 +42,13 @@ jobs:
 
     steps:
     - id: 'auth'
-      uses: 'google-github-actions/auth@v1'
+      uses: 'google-github-actions/auth@v2'
       with:
         workload_identity_provider: 'projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
         service_account: 'my-service-account@my-project.iam.gserviceaccount.com'
 
     - id: 'get-credentials'
-      uses: 'google-github-actions/get-gke-credentials@v1'
+      uses: 'google-github-actions/get-gke-credentials@v2'
       with:
         cluster_name: 'my-cluster'
         location: 'us-central1-a'
@@ -134,13 +134,13 @@ jobs:
 
     steps:
     - id: 'auth'
-      uses: 'google-github-actions/auth@v1'
+      uses: 'google-github-actions/auth@v2'
       with:
         workload_identity_provider: 'projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
         service_account: 'my-service-account@my-project.iam.gserviceaccount.com'
 
     - id: 'get-credentials'
-      uses: 'google-github-actions/get-gke-credentials@v1'
+      uses: 'google-github-actions/get-gke-credentials@v2'
       with:
         cluster_name: 'my-cluster'
         location: 'us-central1-a'
@@ -153,12 +153,12 @@ jobs:
   job_id:
     steps:
     - id: 'auth'
-      uses: 'google-github-actions/auth@v1'
+      uses: 'google-github-actions/auth@v2'
       with:
         credentials_json: '${{ secrets.gcp_credentials }}'
 
     - id: 'get-credentials'
-      uses: 'google-github-actions/get-gke-credentials@v1'
+      uses: 'google-github-actions/get-gke-credentials@v2'
       with:
         cluster_name: 'my-cluster'
         location: 'us-central1-a'
@@ -176,7 +176,7 @@ jobs:
   job_id:
     steps:
     - id: 'get-credentials'
-      uses: 'google-github-actions/get-gke-credentials@v1'
+      uses: 'google-github-actions/get-gke-credentials@v2'
       with:
         cluster_name: 'my-cluster'
         location: 'us-central1-a'
@@ -196,7 +196,7 @@ jobs:
   job_id:
     steps:
     - id: 'get-credentials'
-      uses: 'google-github-actions/get-gke-credentials@v1'
+      uses: 'google-github-actions/get-gke-credentials@v2'
       with:
         cluster_name: 'my-private-cluster'
         location: 'us-central1-a'
@@ -206,26 +206,6 @@ jobs:
 Follow the [Connect gateway documentation][connect-gw] for initial setup.
 Note: The Connect Agent service account must have the correct [impersonation policy][connect-gw-impersonation] on the service account used to authenticate this action.
 
-## Versioning
-
-We recommend pinning to the latest available major version:
-
-```yaml
-- uses: 'google-github-actions/get-gke-credentials@v1'
-```
-
-While this action attempts to follow semantic versioning, but we're ultimately
-human and sometimes make mistakes. To prevent accidental breaking changes, you
-can also pin to a specific version:
-
-```yaml
-- uses: 'google-github-actions/get-gke-credentials@v1.0.0'
-```
-
-However, you will not get automatic security updates or new features without
-explicitly updating your version number. Note that we only publish `MAJOR` and
-`MAJOR.MINOR.PATCH` versions. There is **not** a floating alias for
-`MAJOR.MINOR`.
 
 [gke]: https://cloud.google.com/kubernetes-engine
 [gcp-auth-plugin]: https://github.com/kubernetes/client-go/tree/master/plugin/pkg/client/auth/gcp
