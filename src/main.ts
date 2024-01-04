@@ -22,6 +22,7 @@ import {
   debug as logDebug,
   info as logInfo,
   setFailed,
+  setOutput,
 } from '@actions/core';
 import {
   errorMessage,
@@ -139,6 +140,7 @@ async function run(): Promise<void> {
 
       exportVariable('KUBECONFIG', kubeConfigPath);
       exportVariable('KUBE_CONFIG_PATH', kubeConfigPath);
+      setOutput('kubeconfig_path', kubeConfigPath);
       logInfo(`Successfully created and exported "KUBECONFIG" at: ${kubeConfigPath}`);
     } catch (err) {
       const msg = errorMessage(err);
