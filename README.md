@@ -96,6 +96,10 @@ jobs:
     unspecified, this defaults to the project of the authenticated principle.
     This is an advanced setting, most users should leave this blank.
 
+-   `context_name` - (Optional) Name to use when creating the kubectl context.
+    If not specified, the default value is
+    "gke_{PROJECT_ID}_{LOCATION}_${CLUSTER_NAME}".
+
 ## Outputs
 
 -   `kubeconfig_path` - Path on the local filesystem where the generated
