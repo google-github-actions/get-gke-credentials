@@ -20,7 +20,7 @@ import assert from 'node:assert';
 import crypto from 'crypto';
 import YAML from 'yaml';
 
-import { ClusterClient, ClusterResponse } from '../src/gkeClient';
+import { ClusterClient, ClusterResponse } from '../src/client';
 
 import { skipIfMissingEnv } from '@google-github-actions/actions-utils';
 

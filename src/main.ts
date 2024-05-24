@@ -32,9 +32,9 @@ import {
   writeSecureFile,
 } from '@google-github-actions/actions-utils';
 
-import { ClusterClient } from './gkeClient';
+import { ClusterClient } from './client';
 
-async function run(): Promise<void> {
+export async function run(): Promise<void> {
   try {
     // Get inputs
     let projectID = getInput('project_id');
@@ -136,7 +136,7 @@ async function run(): Promise<void> {
       const filename = 'gha-kubeconfig-' + randomFilename(8);
       const kubeConfigPath = pathjoin(githubWorkspace, filename);
       logDebug(`Creating KUBECONFIG at ${kubeConfigPath}`);
-      await writeSecureFile(kubeConfigPath, kubeConfig);
+      await writeSecureFile(kubeConfigPath, kubeConfig, { mode: 0o600 });
 
       exportVariable('KUBECONFIG', kubeConfigPath);
       exportVariable('KUBE_CONFIG_PATH', kubeConfigPath);
