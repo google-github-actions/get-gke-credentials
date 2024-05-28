@@ -53,6 +53,11 @@ inputs:
       default value is `gke_<project>_<location>_<cluster>`.
     required: false
 
+  namespace:
+    description: |-
+      Name of the Kubernetes namespace to use within the context.
+    required: false
+
   use_auth_provider:
     description: |-
       Set this to true to use the Google Cloud auth plugin in `kubectl` instead
