@@ -358,6 +358,7 @@ export class ClusterClient {
           context: {
             cluster: cluster.data.name,
             user: cluster.data.name,
+            namespace: opts.namespace,
           },
           name: contextName,
         },
@@ -366,6 +367,7 @@ export class ClusterClient {
       'current-context': contextName,
       'users': [{ ...{ name: cluster.data.name }, ...auth }],
     };
+
     return YAML.stringify(kubeConfig);
   }
 
@@ -393,6 +395,7 @@ type context = {
   context: {
     cluster: string;
     user: string;
+    namespace?: string;
   };
   name: string;
 };
@@ -414,6 +417,9 @@ export type CreateKubeConfigOptions = {
 
   // contextName is the name of the context.
   contextName: string;
+
+  // namespace is the name of the Kubernetes namespace.
+  namespace?: string;
 };
 
 export type KubeConfig = {

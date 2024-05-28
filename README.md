@@ -84,6 +84,8 @@ jobs:
 -   <a name="context_name"></a><a href="#user-content-context_name"><code>context_name</code></a>: _(Optional)_ Name to use when creating the `kubectl` context. If not specified, the
     default value is `gke_<project>_<location>_<cluster>`.
 
+-   <a name="namespace"></a><a href="#user-content-namespace"><code>namespace</code></a>: _(Optional)_ Name of the Kubernetes namespace to use within the context.
+
 -   <a name="use_auth_provider"></a><a href="#user-content-use_auth_provider"><code>use_auth_provider</code></a>: _(Optional, default: `false`)_ Set this to true to use the Google Cloud auth plugin in `kubectl` instead
     of inserting a short-lived access token.
 

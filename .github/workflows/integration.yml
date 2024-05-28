@@ -44,6 +44,7 @@ jobs:
           project_id: '${{ vars.PROJECT_ID }}'
           cluster_name: '${{ vars.PUBLIC_CLUSTER_NAME }}'
           location: '${{ vars.PUBLIC_CLUSTER_LOCATION }}'
+          namespace: 'default'
 
       - name: 'kubectl'
         run: |-
@@ -74,6 +75,7 @@ jobs:
           cluster_name: '${{ vars.PRIVATE_CLUSTER_NAME }}'
           location: '${{ vars.PRIVATE_CLUSTER_LOCATION }}'
           use_connect_gateway: 'true'
+          namespace: 'default'
 
       - name: 'kubectl'
         run: |-

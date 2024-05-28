@@ -20,7 +20,7 @@ import assert from 'node:assert';
 import crypto from 'crypto';
 import YAML from 'yaml';
 
-import { ClusterClient, ClusterResponse } from '../src/client';
+import { ClusterClient, ClusterResponse, KubeConfig } from '../src/client';
 
 import { skipIfMissingEnv } from '@google-github-actions/actions-utils';
 
@@ -152,7 +152,7 @@ test(
   '#getToken',
   {
     concurrency: true,
-    skip: skipIfMissingEnv('TEST_PROJECT_ID', 'TEST_CLUSTER_ID', 'TEST_CLUSTER_LOCATION'),
+    skip: skipIfMissingEnv('TEST_PROJECT_ID', 'TEST_CLUSTER_NAME', 'TEST_CLUSTER_LOCATION'),
   },
   async (suite) => {
     await suite.test('can get token', async () => {
@@ -174,7 +174,7 @@ test(
   '#getCluster',
   {
     concurrency: true,
-    skip: skipIfMissingEnv('TEST_PROJECT_ID', 'TEST_CLUSTER_ID', 'TEST_CLUSTER_LOCATION'),
+    skip: skipIfMissingEnv('TEST_PROJECT_ID', 'TEST_CLUSTER_NAME', 'TEST_CLUSTER_LOCATION'),
   },
   async (suite) => {
     const testProjectID = process.env.TEST_PROJECT_ID!;
@@ -300,7 +300,7 @@ test(
   '#createKubeConfig',
   {
     concurrency: true,
-    skip: skipIfMissingEnv('TEST_PROJECT_ID', 'TEST_CLUSTER_ID', 'TEST_CLUSTER_LOCATION'),
+    skip: skipIfMissingEnv('TEST_PROJECT_ID', 'TEST_CLUSTER_NAME', 'TEST_CLUSTER_LOCATION'),
   },
   async (suite) => {
     const testProjectID = process.env.TEST_PROJECT_ID!;
@@ -345,7 +345,7 @@ test(
           projectID: testProjectID,
           location: testClusterLocation,
         });
-        const kubeconfig = YAML.parse(
+        const kubeconfig: KubeConfig = YAML.parse(
           await client.createKubeConfig({
             useAuthProvider: true,
             useInternalIP: false,
@@ -370,7 +370,7 @@ test(
         );
 
         assert.deepStrictEqual(user?.name, publicCluster?.data?.name);
-        assert.deepStrictEqual(user?.user?.['auth-provider'], 'gcp');
+        assert.deepStrictEqual(user?.user?.['auth-provider']?.name, 'gcp');
       },
     );
 
@@ -380,7 +380,7 @@ test(
         projectID: testProjectID,
         location: testClusterLocation,
       });
-      const kubeconfig = YAML.parse(
+      const kubeconfig: KubeConfig = YAML.parse(
         await client.createKubeConfig({
           useAuthProvider: false,
           useInternalIP: true,
@@ -413,7 +413,7 @@ test(
         projectID: testProjectID,
         location: testClusterLocation,
       });
-      const kubeconfig = YAML.parse(
+      const kubeconfig: KubeConfig = YAML.parse(
         await client.createKubeConfig({
           useAuthProvider: false,
           useInternalIP: false,
@@ -428,7 +428,27 @@ test(
       assert.deepStrictEqual(kubeconfig?.['current-context'], contextName);
 
       assert.deepStrictEqual(cluster?.name, privateCluster.data.name);
-      assert.deepStrictEqual(cluster?.server, 'https://foo');
+      assert.deepStrictEqual(cluster?.cluster.server, 'https://foo');
+    });
+
+    await suite.test('can set a namespace=', async () => {
+      const contextName = crypto.randomBytes(12).toString('hex');
+      const client = new ClusterClient({
+        projectID: testProjectID,
+        location: testClusterLocation,
+      });
+      const kubeconfig: KubeConfig = YAML.parse(
+        await client.createKubeConfig({
+          useAuthProvider: false,
+          useInternalIP: false,
+          clusterData: privateCluster,
+          contextName: contextName,
+          namespace: 'my-namespace',
+        }),
+      );
+
+      const context = kubeconfig?.contexts?.at(0)?.context;
+      assert.deepStrictEqual(context?.namespace, 'my-namespace');
     });
   },
 );

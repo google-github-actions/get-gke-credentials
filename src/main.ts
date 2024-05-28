@@ -46,6 +46,7 @@ export async function run(): Promise<void> {
     const useAuthProvider = parseBoolean(getInput('use_auth_provider'));
     const useInternalIP = parseBoolean(getInput('use_internal_ip'));
     let contextName = getInput('context_name');
+    const namespace = presence(getInput('namespace'));
     const useConnectGateway = parseBoolean(getInput('use_connect_gateway'));
 
     // Only one of use_connect_gateway or use_internal_ip should be provided
@@ -129,6 +130,7 @@ export async function run(): Promise<void> {
       connectGWEndpoint: connectGWEndpoint,
       clusterData: clusterData,
       contextName: contextName,
+      namespace: namespace,
     });
 
     // Write kubeconfig to disk
