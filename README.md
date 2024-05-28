@@ -60,53 +60,69 @@ jobs:
 
 ## Inputs
 
--   `cluster_name` - (Required) Name of the cluster for which to get
-    credentials. If specified as a full resource name (e.g.
-    "projects/p/locations/l/clusters/c"), then then "project_id" and "location"
-    inputs are optional. If only specified as the name (e.g. "my-cluster"), then
-    the "project_id" and "location" inputs may be required.
+<!-- BEGIN_AUTOGEN_INPUTS -->
 
--   `location` - (Optional) Location (e.g. region or zone) in which the cluster
-    resides. This value is required unless you specify "cluster_name" as a full
-    resource name.
+-   <a name="cluster_name"></a><a href="#user-content-cluster_name"><code>cluster_name</code></a>: _(Required)_ Name of the cluster for which to get credentials. This can be specified as
+    a full resource name:
 
--   `project_id` - (Optional) Project ID where the cluster is deployed. If
-    provided, this will override the project configured by previous steps or
-    environment variables. If not provided, the project will be inferred,
-    best-effort.
+        projects/<project>/locations/<location>/clusters/<cluster>
 
--   `use_auth_provider` - (Optional) If true, use the Google Cloud auth plugin in
-    kubectl instead of a short-lived access token. The default value is false.
+    In which case the `project_id` and `location` inputs are optional. If only
+    specified as a name:
 
--   `use_internal_ip` - (Optional) If true, use the internal IP address for the
-    cluster endpoint. This is mostly used with private GKE clusters. The default
-    value is false.
+        <cluster>
 
--   `use_connect_gateway` - (Optional) If true, uses the [Connect Gateway
+    then both the `project_id` and `location` may be required.
+
+-   <a name="location"></a><a href="#user-content-location"><code>location</code></a>: _(Optional)_ Location (region or zone) in which the cluster resides. This value is
+    required unless `cluster_name` is a full resource name.
+
+-   <a name="project_id"></a><a href="#user-content-project_id"><code>project_id</code></a>: _(Optional)_ Project ID where the cluster is deployed. If provided, this will override
+    the project configured by previous steps or environment variables. If not
+    provided, the project will be inferred from the environment, best-effort.
+
+-   <a name="context_name"></a><a href="#user-content-context_name"><code>context_name</code></a>: _(Optional)_ Name to use when creating the `kubectl` context. If not specified, the
+    default value is `gke_<project>_<location>_<cluster>`.
+
+-   <a name="use_auth_provider"></a><a href="#user-content-use_auth_provider"><code>use_auth_provider</code></a>: _(Optional, default: `false`)_ Set this to true to use the Google Cloud auth plugin in `kubectl` instead
+    of inserting a short-lived access token.
+
+-   <a name="use_internal_ip"></a><a href="#user-content-use_internal_ip"><code>use_internal_ip</code></a>: _(Optional, default: `false`)_ Set this to true to use the internal IP address for the cluster endpoint.
+    This is mostly used with private GKE clusters.
+
+-   <a name="use_connect_gateway"></a><a href="#user-content-use_connect_gateway"><code>use_connect_gateway</code></a>: _(Optional, default: `false`)_ Set this to true to use the [Connect Gateway
     endpoint](https://cloud.google.com/anthos/multicluster-management/gateway)
-    to connect to the cluster. The default value is false.
+    to connect to cluster.
 
--   `fleet_membership_name` - (Optional) Fleet membership name of form
-    "projects/PROJECT_ID/locations/LOCATION/memberships/MEMBERSHIP_NAME" to use
-    for generating the Connect Gateway endpoint. This only applies if
-    "use_connect_gateway" is true. Defaults to auto discovery if empty.
+-   <a name="fleet_membership_name"></a><a href="#user-content-fleet_membership_name"><code>fleet_membership_name</code></a>: _(Optional)_ Fleet membership name to use for generating Connect Gateway endpoint, of
+    the form:
 
--   `quota_project_id` - (Optional) Project ID from which to pull quota. The
-    caller must have `serviceusage.services.use` permission on the project. If
-    unspecified, this defaults to the project of the authenticated principle.
-    This is an advanced setting, most users should leave this blank.
+        projects/<project>/locations/<location>/memberships/<membership>
 
--   `context_name` - (Optional) Name to use when creating the kubectl context.
-    If not specified, the default value is
-    "gke_{PROJECT_ID}_{LOCATION}_${CLUSTER_NAME}".
+    This only applies if `use_connect_gateway` is true. Defaults to auto
+    discovery if empty.
+
+-   <a name="quota_project_id"></a><a href="#user-content-quota_project_id"><code>quota_project_id</code></a>: _(Optional)_ Project ID from which to pull quota. The caller must have
+    `serviceusage.services.use` permission on the project. If unspecified,
+    this defaults to the project of the authenticated principle. This is an
+    advanced setting, most users should leave this blank.
+
+
+<!-- END_AUTOGEN_INPUTS -->
 
 ## Outputs
 
--   `kubeconfig_path` - Path on the local filesystem where the generated
-    KUBECONFIG file resides.
+In addition to setting the `$KUBECONFIG` environment variable, this GitHub
+Action produces the following outputs:
 
--   Exports env var `KUBECONFIG` which is set to the generated `kubeconfig` file
-    path.
+<!-- BEGIN_AUTOGEN_OUTPUTS -->
+
+-   `kubeconfig_path`: Path on the local filesystem where the generated Kubernetes configuration
+    file resides.
+
+
+<!-- END_AUTOGEN_OUTPUTS -->
+
 
 ## Authorization
 

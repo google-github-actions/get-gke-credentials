@@ -24,57 +24,57 @@ jobs:
     if: ${{ github.event_name == 'push' || github.repository == github.event.pull_request.head.repo.full_name && github.actor != 'dependabot[bot]' }}
     runs-on: 'ubuntu-latest'
     steps:
-    - uses: 'actions/checkout@v4'
+      - uses: 'actions/checkout@v4'
 
-    - uses: 'actions/setup-node@v4'
-      with:
-        node-version: '20.x'
+      - uses: 'actions/setup-node@v4'
+        with:
+          node-version: '20.x'
 
-    - name: 'npm build'
-      run: 'npm ci && npm run build'
+      - name: 'npm build'
+        run: 'npm ci && npm run build'
 
-    - uses: 'google-github-actions/auth@v2'
-      with:
-        workload_identity_provider: '${{ vars.WIF_PROVIDER_NAME }}'
-        service_account: '${{ vars.SERVICE_ACCOUNT_EMAIL }}'
+      - uses: 'google-github-actions/auth@v2'
+        with:
+          workload_identity_provider: '${{ vars.WIF_PROVIDER_NAME }}'
+          service_account: '${{ vars.SERVICE_ACCOUNT_EMAIL }}'
 
-    - name: 'get-gke-credentials'
-      uses: './'
-      with:
-        project_id: '${{ vars.PROJECT_ID }}'
-        cluster_name: '${{ vars.PUBLIC_CLUSTER_NAME }}'
-        location: '${{ vars.PUBLIC_CLUSTER_LOCATION }}'
+      - name: 'get-gke-credentials'
+        uses: './'
+        with:
+          project_id: '${{ vars.PROJECT_ID }}'
+          cluster_name: '${{ vars.PUBLIC_CLUSTER_NAME }}'
+          location: '${{ vars.PUBLIC_CLUSTER_LOCATION }}'
 
-    - name: 'kubectl'
-      run: |-
-        kubectl get ns
+      - name: 'kubectl'
+        run: |-
+          kubectl get ns
 
   private:
     if: ${{ github.event_name == 'push' || github.repository == github.event.pull_request.head.repo.full_name && github.actor != 'dependabot[bot]' }}
     runs-on: 'ubuntu-latest'
     steps:
-    - uses: 'actions/checkout@v4'
+      - uses: 'actions/checkout@v4'
 
-    - uses: 'actions/setup-node@v4'
-      with:
-        node-version: '20.x'
+      - uses: 'actions/setup-node@v4'
+        with:
+          node-version: '20.x'
 
-    - name: 'npm build'
-      run: 'npm ci && npm run build'
+      - name: 'npm build'
+        run: 'npm ci && npm run build'
 
-    - uses: 'google-github-actions/auth@v2'
-      with:
-        workload_identity_provider: '${{ vars.WIF_PROVIDER_NAME }}'
-        service_account: '${{ vars.SERVICE_ACCOUNT_EMAIL }}'
+      - uses: 'google-github-actions/auth@v2'
+        with:
+          workload_identity_provider: '${{ vars.WIF_PROVIDER_NAME }}'
+          service_account: '${{ vars.SERVICE_ACCOUNT_EMAIL }}'
 
-    - name: 'get-gke-credentials'
-      uses: './'
-      with:
-        project_id: '${{ vars.PROJECT_ID }}'
-        cluster_name: '${{ vars.PRIVATE_CLUSTER_NAME }}'
-        location: '${{ vars.PRIVATE_CLUSTER_LOCATION }}'
-        use_connect_gateway: 'true'
+      - name: 'get-gke-credentials'
+        uses: './'
+        with:
+          project_id: '${{ vars.PROJECT_ID }}'
+          cluster_name: '${{ vars.PRIVATE_CLUSTER_NAME }}'
+          location: '${{ vars.PRIVATE_CLUSTER_LOCATION }}'
+          use_connect_gateway: 'true'
 
-    - name: 'kubectl'
-      run: |-
-        kubectl get ns
+      - name: 'kubectl'
+        run: |-
+          kubectl get ns
