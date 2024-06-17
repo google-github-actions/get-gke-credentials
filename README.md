@@ -44,8 +44,8 @@ jobs:
     - id: 'auth'
       uses: 'google-github-actions/auth@v2'
       with:
+        project_id: 'my-project'
         workload_identity_provider: 'projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
-        service_account: 'my-service-account@my-project.iam.gserviceaccount.com'
 
     - id: 'get-credentials'
       uses: 'google-github-actions/get-gke-credentials@v2'
@@ -158,8 +158,8 @@ jobs:
     - id: 'auth'
       uses: 'google-github-actions/auth@v2'
       with:
+        project_id: 'my-project'
         workload_identity_provider: 'projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
-        service_account: 'my-service-account@my-project.iam.gserviceaccount.com'
 
     - id: 'get-credentials'
       uses: 'google-github-actions/get-gke-credentials@v2'
