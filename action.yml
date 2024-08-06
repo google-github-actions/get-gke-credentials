@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Get GKE Credentials
+name: 'Get GKE Credentials'
+author: 'Google LLC'
 description: |-
-  Use this action to authenticate to a GKE cluster by generating
-  an emphemeral kubeconfig to use with kubectl, helm etc.
-author: Google LLC
+  Authenticate to a Google Kubernetes Engine (GKE) cluster by generating an
+  emphemeral kubeconfig to use with kubectl, helm, etc.
 
 inputs:
   cluster_name:
