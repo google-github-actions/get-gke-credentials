@@ -48,11 +48,12 @@ export async function run(): Promise<void> {
     let contextName = getInput('context_name');
     const namespace = presence(getInput('namespace'));
     const useConnectGateway = parseBoolean(getInput('use_connect_gateway'));
+    const useDNSBasedEndpoint = parseBoolean(getInput('use_dns_based_endpoint'));
 
-    // Only one of use_connect_gateway or use_internal_ip should be provided
-    if (useInternalIP && useConnectGateway) {
+    // Only one of use_internal_ip, use_connect_gateway, or use_dns_based_endpoint should be provided
+    if (useInternalIP && useConnectGateway && useDNSBasedEndpoint) {
       throw new Error(
-        'The workflow must specify only one of `use_internal_ip` or `use_connect_gateway`',
+        'The workflow must specify only one of `use_internal_ip`, `use_connect_gateway`, or `use_dns_based_endpoint`',
       );
     }
 
@@ -127,6 +128,7 @@ export async function run(): Promise<void> {
     const kubeConfig = await client.createKubeConfig({
       useAuthProvider: useAuthProvider,
       useInternalIP: useInternalIP,
+      useDNSBasedEndpoint: useDNSBasedEndpoint,
       connectGWEndpoint: connectGWEndpoint,
       clusterData: clusterData,
       contextName: contextName,

@@ -96,6 +96,9 @@ jobs:
     endpoint](https://cloud.google.com/anthos/multicluster-management/gateway)
     to connect to cluster.
 
+-   <a name="use_dns_based_endpoint"></a><a href="#user-content-use_dns_based_endpoint"><code>use_dns_based_endpoint</code></a>: _(Optional, default: `false`)_ Set this true to use [DNS-based endpoint](https://cloud.google.com/kubernetes-engine/docs/concepts/network-isolation#dns-based_endpoint)
+    to connect to the cluster.
+
 -   <a name="fleet_membership_name"></a><a href="#user-content-fleet_membership_name"><code>fleet_membership_name</code></a>: _(Optional)_ Fleet membership name to use for generating Connect Gateway endpoint, of
     the form:
 

@@ -58,6 +58,11 @@ const defaultMocks = (
           privateClusterConfig: {
             privateEndpoint: 'https://zip.zap',
           },
+          controlPlaneEndpointsConfig: {
+            dnsEndpointConfig: {
+              endpoint: 'gke-123456789.us-central1.gke.goog',
+            },
+          },
         },
       };
     }),

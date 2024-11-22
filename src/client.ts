@@ -332,6 +332,16 @@ export class ClusterClient {
     if (opts.useInternalIP) {
       endpoint = cluster.data.privateClusterConfig.privateEndpoint;
     }
+    if (opts.useDNSBasedEndpoint) {
+      endpoint = cluster.data.controlPlaneEndpointsConfig.dnsEndpointConfig.endpoint;
+    }
+
+    let useCACert = true;
+    // Even if user doesn't specify use_dns_based_endpoint: true, if the endpoint is DNS-based endpoint (suffix: "gke.goog"),
+    // we can not use the cluster's CA cert.
+    if (connectGatewayEndpoint || opts.useDNSBasedEndpoint || endpoint.endsWith('gke.goog')) {
+      useCACert = false;
+    }
 
     const token = await this.getToken();
     const auth = opts.useAuthProvider
@@ -344,7 +354,7 @@ export class ClusterClient {
       'clusters': [
         {
           cluster: {
-            ...(!connectGatewayEndpoint && {
+            ...(useCACert && {
               'certificate-authority-data': cluster.data.masterAuth?.clusterCaCertificate,
             }),
             server: `https://${endpoint}`,
@@ -408,6 +418,10 @@ export type CreateKubeConfigOptions = {
   // endpoint.
   useInternalIP: boolean;
 
+  // useDNSBasedEndpoint is a boolean to use the DNS-based endpoint of the
+  // cluster.
+  useDNSBasedEndpoint: boolean;
+
   // clusterData is the cluster response data.
   clusterData: ClusterResponse;
 
@@ -447,6 +461,11 @@ export type ClusterResponse = {
     };
     privateClusterConfig: {
       privateEndpoint: string;
+    };
+    controlPlaneEndpointsConfig: {
+      dnsEndpointConfig: {
+        endpoint: string;
+      };
     };
   };
 };
