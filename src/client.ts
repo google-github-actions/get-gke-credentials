@@ -336,9 +336,10 @@ export class ClusterClient {
       endpoint = cluster.data.controlPlaneEndpointsConfig.dnsEndpointConfig.endpoint;
     }
 
+    // By default, use the CA cert. Even if user doesn't specify
+    // `use_dns_based_endpoint:true`, if the endpoint is DNS-based endpoint
+    // (suffix: "gke.goog"), we can not use the cluster's CA cert.
     let useCACert = true;
-    // Even if user doesn't specify use_dns_based_endpoint: true, if the endpoint is DNS-based endpoint (suffix: "gke.goog"),
-    // we can not use the cluster's CA cert.
     if (connectGatewayEndpoint || opts.useDNSBasedEndpoint || endpoint.endsWith('gke.goog')) {
       useCACert = false;
     }
