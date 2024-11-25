@@ -18,6 +18,7 @@ import { presence } from '@google-github-actions/actions-utils';
 import { GoogleAuth } from 'google-auth-library';
 import { Headers } from 'gaxios';
 import YAML from 'yaml';
+import { debug as logDebug } from '@actions/core';
 
 // Do not listen to the linter - this can NOT be rewritten as an ES6 import statement.
 const { version: appVersion } = require('../package.json');
@@ -154,16 +155,20 @@ export class ClusterClient {
     this.#location = opts?.location;
   }
 
-  /**
-   * Retrieves the auth client for authenticating requests.
-   *
-   * @returns string
-   */
   async getToken(): Promise<string> {
+    // Check if the access token is provided via environment variables
+    const envToken = process.env.ACCESS_TOKEN;
+    if (envToken) {
+      logDebug(`Going with Env, ${envToken}`);
+      return envToken;
+    }
+
+    // Fallback to the original functionality
     const token = await this.auth.getAccessToken();
     if (!token) {
       throw new Error('Failed to generate token.');
     }
+    logDebug(`Going with fetch token`);
     return token;
   }
 

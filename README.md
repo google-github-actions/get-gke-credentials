@@ -168,6 +168,21 @@ jobs:
         location: 'us-central1-a'
 ```
 
+#### Authenticating via Service Account static access token
+
+```yaml
+jobs:
+  job_id:
+    steps:
+    - id: 'get-credentials'
+      uses: 'google-github-actions/get-gke-credentials@v2'
+      env:
+        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+      with:
+        cluster_name: 'my-cluster'
+        location: 'us-central1-a'
+```
+
 #### Authenticating via Service Account Key JSON
 
 ```yaml
