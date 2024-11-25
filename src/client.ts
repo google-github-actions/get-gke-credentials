@@ -155,6 +155,11 @@ export class ClusterClient {
     this.#location = opts?.location;
   }
 
+    /**
+   * Retrieves the auth client for authenticating requests.
+   *
+   * @returns string
+   */
   async getToken(): Promise<string> {
     // Check if the access token is provided via environment variables
     const envToken = process.env.ACCESS_TOKEN;
