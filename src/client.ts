@@ -164,7 +164,7 @@ export class ClusterClient {
     // Check if the access token is provided via environment variables
     const envToken = process.env.ACCESS_TOKEN;
     if (envToken) {
-      logDebug(`Going with Env, ${envToken}`);
+      logDebug(`Going with Env`);
       return envToken;
     }
 
