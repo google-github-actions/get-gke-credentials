@@ -34,6 +34,11 @@ const publicCluster: ClusterResponse = {
     privateClusterConfig: {
       privateEndpoint: '',
     },
+    controlPlaneEndpointsConfig: {
+      dnsEndpointConfig: {
+        endpoint: 'gke-123456789.us-central1.gke.goog',
+      },
+    },
   },
 };
 
@@ -46,6 +51,11 @@ const privateCluster: ClusterResponse = {
     },
     privateClusterConfig: {
       privateEndpoint: 'private-endpoint',
+    },
+    controlPlaneEndpointsConfig: {
+      dnsEndpointConfig: {
+        endpoint: 'gke-123456789.us-central1.gke.goog',
+      },
     },
   },
 };
@@ -316,6 +326,7 @@ test(
         await client.createKubeConfig({
           useAuthProvider: false,
           useInternalIP: false,
+          useDNSBasedEndpoint: false,
           clusterData: publicCluster,
           contextName: contextName,
         }),
@@ -349,6 +360,7 @@ test(
           await client.createKubeConfig({
             useAuthProvider: true,
             useInternalIP: false,
+            useDNSBasedEndpoint: false,
             clusterData: publicCluster,
             contextName: contextName,
           }),
@@ -384,6 +396,7 @@ test(
         await client.createKubeConfig({
           useAuthProvider: false,
           useInternalIP: true,
+          useDNSBasedEndpoint: false,
           clusterData: privateCluster,
           contextName: contextName,
         }),
@@ -417,6 +430,7 @@ test(
         await client.createKubeConfig({
           useAuthProvider: false,
           useInternalIP: false,
+          useDNSBasedEndpoint: false,
           connectGWEndpoint: 'foo',
           clusterData: privateCluster,
           contextName: contextName,
@@ -431,6 +445,30 @@ test(
       assert.deepStrictEqual(cluster?.cluster.server, 'https://foo');
     });
 
+    await suite.test('can generate kubeconfig with DNS-based endpoint', async () => {
+      const contextName = crypto.randomBytes(12).toString('hex');
+      const client = new ClusterClient({
+        projectID: testProjectID,
+        location: testClusterLocation,
+      });
+      const kubeconfig: KubeConfig = YAML.parse(
+        await client.createKubeConfig({
+          useAuthProvider: false,
+          useInternalIP: false,
+          useDNSBasedEndpoint: true,
+          clusterData: privateCluster,
+          contextName: contextName,
+        }),
+      );
+
+      const cluster = kubeconfig.clusters?.at(0);
+
+      assert.deepStrictEqual(kubeconfig?.['current-context'], contextName);
+
+      assert.deepStrictEqual(cluster?.name, privateCluster.data.name);
+      assert.deepStrictEqual(cluster?.cluster.server, 'https://gke-123456789.us-central1.gke.goog');
+    });
+
     await suite.test('can set a namespace=', async () => {
       const contextName = crypto.randomBytes(12).toString('hex');
       const client = new ClusterClient({
@@ -441,6 +479,7 @@ test(
         await client.createKubeConfig({
           useAuthProvider: false,
           useInternalIP: false,
+          useDNSBasedEndpoint: false,
           clusterData: privateCluster,
           contextName: contextName,
           namespace: 'my-namespace',
