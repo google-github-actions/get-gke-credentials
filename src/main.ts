@@ -50,8 +50,9 @@ export async function run(): Promise<void> {
     const useConnectGateway = parseBoolean(getInput('use_connect_gateway'));
     const useDNSBasedEndpoint = parseBoolean(getInput('use_dns_based_endpoint'));
 
-    // Only one of use_internal_ip, use_connect_gateway, or use_dns_based_endpoint should be provided
-    if (useInternalIP && useConnectGateway && useDNSBasedEndpoint) {
+    // Only one of use_internal_ip, use_connect_gateway, or
+    // use_dns_based_endpoint should be provided.
+    if ([useInternalIP, useConnectGateway, useDNSBasedEndpoint].filter(Boolean).length > 1) {
       throw new Error(
         'The workflow must specify only one of `use_internal_ip`, `use_connect_gateway`, or `use_dns_based_endpoint`',
       );
