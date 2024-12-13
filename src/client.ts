@@ -16,7 +16,7 @@
 
 import { presence } from '@google-github-actions/actions-utils';
 import { GoogleAuth } from 'google-auth-library';
-import { Headers } from 'gaxios';
+import { Headers, GaxiosOptions } from 'gaxios';
 import YAML from 'yaml';
 
 // Do not listen to the linter - this can NOT be rewritten as an ES6 import statement.
@@ -45,6 +45,16 @@ type ClientOptions = {
   projectID?: string;
   quotaProjectID?: string;
   location?: string;
+  logger?: Logger;
+};
+
+/**
+ * Logger is the passed in logger on the client.
+ */
+type Logger = {
+  debug: (message: string) => void; // eslint-disable-line no-unused-vars
+  info: (message: string) => void; // eslint-disable-line no-unused-vars
+  warn: (message: string) => void; // eslint-disable-line no-unused-vars
 };
 
 /**
@@ -130,9 +140,11 @@ export class ClusterClient {
    * name is given (e.g. `c`), these values will be used to construct the full
    * resource name.
    */
+  readonly #logger?: Logger;
   readonly #projectID?: string;
   readonly #quotaProjectID?: string;
   readonly #location?: string;
+  readonly #headers?: Headers;
 
   readonly defaultEndpoint = 'https://container.googleapis.com/v1';
   readonly hubEndpoint = 'https://gkehub.googleapis.com/v1';
@@ -141,6 +153,8 @@ export class ClusterClient {
   readonly auth: GoogleAuth;
 
   constructor(opts?: ClientOptions) {
+    this.#logger = opts?.logger;
+
     this.auth = new GoogleAuth({
       scopes: [
         'https://www.googleapis.com/auth/cloud-platform',
@@ -152,6 +166,13 @@ export class ClusterClient {
     this.#projectID = opts?.projectID;
     this.#quotaProjectID = opts?.quotaProjectID;
     this.#location = opts?.location;
+
+    this.#headers = {
+      'User-Agent': userAgent,
+    };
+    if (this.#quotaProjectID) {
+      this.#headers['X-Goog-User-Project'] = this.#quotaProjectID;
+    }
   }
 
   /**
@@ -160,11 +181,36 @@ export class ClusterClient {
    * @returns string
    */
   async getToken(): Promise<string> {
+    this.#logger?.debug(`Getting token`);
+
     const token = await this.auth.getAccessToken();
     if (!token) {
       throw new Error('Failed to generate token.');
     }
     return token;
+  }
+
+  /**
+   * request is a wrapper around an authenticated request.
+   *
+   * @returns T
+   */
+  async request<T>(opts: GaxiosOptions): Promise<T> {
+    this.#logger?.debug(`Initiating request with options: ${JSON.stringify(opts)}`);
+
+    const mergedOpts: GaxiosOptions = {
+      ...{
+        retry: true,
+        headers: this.#headers,
+        errorRedactor: false,
+      },
+      ...opts,
+    };
+
+    this.#logger?.debug(`  Request options: ${JSON.stringify(mergedOpts)}`);
+
+    const resp = await this.auth.request<T>(mergedOpts);
+    return resp.data;
   }
 
   /**
@@ -209,14 +255,15 @@ export class ClusterClient {
    * @returns project number.
    */
   async projectIDtoNum(projectID: string): Promise<string> {
+    this.#logger?.debug(`Converting project ID '${projectID}' to a project number`);
+
     const url = `${this.cloudResourceManagerEndpoint}/projects/${projectID}`;
-    const resp = (await this.auth.request({
+    const resp = await this.request<{ name: string }>({
       url: url,
-      headers: this.#defaultHeaders(),
-    })) as { data: { name: string } };
+    });
 
     // projectRef of form projects/<project-num>"
-    const projectRef = resp.data?.name;
+    const projectRef = resp.name;
     const projectNum = projectRef.replace('projects/', '');
     if (!projectRef.includes('projects/') || !projectNum) {
       throw new Error(
@@ -234,15 +281,15 @@ export class ClusterClient {
    * @returns endpoint.
    */
   async getConnectGWEndpoint(name: string): Promise<string> {
-    const membershipURL = `${this.hubEndpoint}/${name}`;
-    const resp = (await this.auth.request({
-      url: membershipURL,
-      headers: this.#defaultHeaders(),
-    })) as HubMembershipResponse;
+    this.#logger?.debug(`Getting connect gateway endpoint for '${name}'`);
 
-    const membership = resp.data;
+    const membershipURL = `${this.hubEndpoint}/${name}`;
+    const membership = await this.request<HubMembershipResponse>({
+      url: membershipURL,
+    });
+
     if (!membership) {
-      throw new Error(`Failed to lookup membership: ${resp}`);
+      throw new Error(`Failed to lookup membership: ${name}`);
     }
 
     // For GKE clusters, the configuration path is gkeMemberships, not
@@ -269,6 +316,8 @@ export class ClusterClient {
    * @returns Fleet membership name.
    */
   async discoverClusterMembership(clusterName: string): Promise<string> {
+    this.#logger?.debug(`Discovering cluster membership for '${clusterName}'`);
+
     const clusterResourceLink = `//container.googleapis.com/${this.getResource(clusterName)}`;
     const projectID = this.#projectID;
     if (!projectID) {
@@ -278,12 +327,11 @@ export class ClusterClient {
     }
 
     const url = `${this.hubEndpoint}/projects/${projectID}/locations/global/memberships?filter=endpoint.gkeCluster.resourceLink="${clusterResourceLink}"`;
-    const resp = (await this.auth.request({
+    const resp = await this.request<HubMembershipsResponse>({
       url: url,
-      headers: this.#defaultHeaders(),
-    })) as HubMembershipsResponse;
+    });
 
-    const memberships = resp.data.resources;
+    const memberships = resp.resources;
     if (!memberships || memberships.length < 1) {
       throw new Error(
         `Expected one membership for ${clusterName} in ${projectID}. ` +
@@ -309,11 +357,12 @@ export class ClusterClient {
    * @returns a Cluster object.
    */
   async getCluster(clusterName: string): Promise<ClusterResponse> {
+    this.#logger?.debug(`Getting information about cluster '${clusterName}'`);
+
     const url = `${this.defaultEndpoint}/${this.getResource(clusterName)}`;
-    const resp = (await this.auth.request({
+    const resp = await this.request<ClusterResponse>({
       url: url,
-      headers: this.#defaultHeaders(),
-    })) as ClusterResponse;
+    });
     return resp;
   }
 
@@ -323,17 +372,19 @@ export class ClusterClient {
    * @param opts Input options. See CreateKubeConfigOptions.
    */
   async createKubeConfig(opts: CreateKubeConfigOptions): Promise<string> {
+    this.#logger?.debug(`Creating kubeconfig with options: ${JSON.stringify(opts)}`);
+
     const cluster = opts.clusterData;
-    let endpoint = cluster.data.endpoint;
+    let endpoint = cluster.endpoint;
     const connectGatewayEndpoint = presence(opts.connectGWEndpoint);
     if (connectGatewayEndpoint) {
       endpoint = connectGatewayEndpoint;
     }
     if (opts.useInternalIP) {
-      endpoint = cluster.data.privateClusterConfig.privateEndpoint;
+      endpoint = cluster.privateClusterConfig.privateEndpoint;
     }
     if (opts.useDNSBasedEndpoint) {
-      endpoint = cluster.data.controlPlaneEndpointsConfig.dnsEndpointConfig.endpoint;
+      endpoint = cluster.controlPlaneEndpointsConfig.dnsEndpointConfig.endpoint;
     }
 
     // By default, use the CA cert. Even if user doesn't specify
@@ -356,18 +407,18 @@ export class ClusterClient {
         {
           cluster: {
             ...(useCACert && {
-              'certificate-authority-data': cluster.data.masterAuth?.clusterCaCertificate,
+              'certificate-authority-data': cluster.masterAuth?.clusterCaCertificate,
             }),
             server: `https://${endpoint}`,
           },
-          name: cluster.data.name,
+          name: cluster.name,
         },
       ],
       'contexts': [
         {
           context: {
-            cluster: cluster.data.name,
-            user: cluster.data.name,
+            cluster: cluster.name,
+            user: cluster.name,
             namespace: opts.namespace,
           },
           name: contextName,
@@ -375,21 +426,10 @@ export class ClusterClient {
       ],
       'kind': 'Config',
       'current-context': contextName,
-      'users': [{ ...{ name: cluster.data.name }, ...auth }],
+      'users': [{ ...{ name: cluster.name }, ...auth }],
     };
 
     return YAML.stringify(kubeConfig);
-  }
-
-  #defaultHeaders(): Headers {
-    const h: Headers = {
-      'User-Agent': userAgent,
-    };
-
-    if (this.#quotaProjectID) {
-      h['X-Goog-User-Project'] = this.#quotaProjectID;
-    }
-    return h;
   }
 }
 
@@ -454,19 +494,17 @@ export type KubeConfig = {
 };
 
 export type ClusterResponse = {
-  data: {
-    name: string;
-    endpoint: string;
-    masterAuth: {
-      clusterCaCertificate: string;
-    };
-    privateClusterConfig: {
-      privateEndpoint: string;
-    };
-    controlPlaneEndpointsConfig: {
-      dnsEndpointConfig: {
-        endpoint: string;
-      };
+  name: string;
+  endpoint: string;
+  masterAuth: {
+    clusterCaCertificate: string;
+  };
+  privateClusterConfig: {
+    privateEndpoint: string;
+  };
+  controlPlaneEndpointsConfig: {
+    dnsEndpointConfig: {
+      endpoint: string;
     };
   };
 };
@@ -475,17 +513,13 @@ export type ClusterResponse = {
  * HubMembershipsResponse is the response from listing GKE Hub memberships.
  */
 type HubMembershipsResponse = {
-  data: {
-    resources: HubMembership[];
-  };
+  resources: HubMembership[];
 };
 
 /**
  * HubMembershipResponse is the response from getting a GKE Hub membership.
  */
-type HubMembershipResponse = {
-  data: HubMembership;
-};
+type HubMembershipResponse = HubMembership;
 
 /**
  * HubMembership is a single HubMembership.

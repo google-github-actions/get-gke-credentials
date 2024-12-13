@@ -49,19 +49,17 @@ const defaultMocks = (
 
     client: m.method(ClusterClient.prototype, 'getCluster', async (): Promise<ClusterResponse> => {
       return {
-        data: {
-          name: 'my-cluster',
-          endpoint: 'https://foo.bar',
-          masterAuth: {
-            clusterCaCertificate: 'ca',
-          },
-          privateClusterConfig: {
-            privateEndpoint: 'https://zip.zap',
-          },
-          controlPlaneEndpointsConfig: {
-            dnsEndpointConfig: {
-              endpoint: 'gke-123456789.us-central1.gke.goog',
-            },
+        name: 'my-cluster',
+        endpoint: 'https://foo.bar',
+        masterAuth: {
+          clusterCaCertificate: 'ca',
+        },
+        privateClusterConfig: {
+          privateEndpoint: 'https://zip.zap',
+        },
+        controlPlaneEndpointsConfig: {
+          dnsEndpointConfig: {
+            endpoint: 'gke-123456789.us-central1.gke.goog',
           },
         },
       };
