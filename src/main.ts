@@ -21,6 +21,7 @@ import {
   getInput,
   debug as logDebug,
   info as logInfo,
+  warning as logWarning,
   setFailed,
   setOutput,
 } from '@actions/core';
@@ -105,6 +106,11 @@ export async function run(): Promise<void> {
       projectID: projectID,
       quotaProjectID: quotaProjectID,
       location: location,
+      logger: {
+        debug: logDebug,
+        info: logInfo,
+        warn: logWarning,
+      },
     });
 
     // Get Cluster object

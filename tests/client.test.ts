@@ -25,37 +25,33 @@ import { ClusterClient, ClusterResponse, KubeConfig } from '../src/client';
 import { skipIfMissingEnv } from '@google-github-actions/actions-utils';
 
 const publicCluster: ClusterResponse = {
-  data: {
-    name: 'public-cluster',
-    endpoint: 'public-endpoint',
-    masterAuth: {
-      clusterCaCertificate: 'foo',
-    },
-    privateClusterConfig: {
-      privateEndpoint: '',
-    },
-    controlPlaneEndpointsConfig: {
-      dnsEndpointConfig: {
-        endpoint: 'gke-123456789.us-central1.gke.goog',
-      },
+  name: 'public-cluster',
+  endpoint: 'public-endpoint',
+  masterAuth: {
+    clusterCaCertificate: 'foo',
+  },
+  privateClusterConfig: {
+    privateEndpoint: '',
+  },
+  controlPlaneEndpointsConfig: {
+    dnsEndpointConfig: {
+      endpoint: 'gke-123456789.us-central1.gke.goog',
     },
   },
 };
 
 const privateCluster: ClusterResponse = {
-  data: {
-    name: 'private-cluster',
-    endpoint: '',
-    masterAuth: {
-      clusterCaCertificate: 'foo',
-    },
-    privateClusterConfig: {
-      privateEndpoint: 'private-endpoint',
-    },
-    controlPlaneEndpointsConfig: {
-      dnsEndpointConfig: {
-        endpoint: 'gke-123456789.us-central1.gke.goog',
-      },
+  name: 'private-cluster',
+  endpoint: '',
+  masterAuth: {
+    clusterCaCertificate: 'foo',
+  },
+  privateClusterConfig: {
+    privateEndpoint: 'private-endpoint',
+  },
+  controlPlaneEndpointsConfig: {
+    dnsEndpointConfig: {
+      endpoint: 'gke-123456789.us-central1.gke.goog',
     },
   },
 };
@@ -198,8 +194,8 @@ test(
       });
 
       const result = await client.getCluster(testClusterName);
-      assert.ok('endpoint' in (result?.data ?? {}));
-      assert.ok('clusterCaCertificate' in (result?.data?.masterAuth ?? {}));
+      assert.ok('endpoint' in result);
+      assert.ok('clusterCaCertificate' in result.masterAuth);
     });
 
     await suite.test('can get cluster by full resource name', async () => {
@@ -207,8 +203,8 @@ test(
       const client = new ClusterClient();
 
       const result = await client.getCluster(resourceName);
-      assert.ok('endpoint' in (result?.data ?? {}));
-      assert.ok('clusterCaCertificate' in (result?.data?.masterAuth ?? {}));
+      assert.ok('endpoint' in result);
+      assert.ok('clusterCaCertificate' in result.masterAuth);
     });
   },
 );
@@ -270,7 +266,7 @@ test('#discoverClusterMembership', { concurrency: true }, async (suite) => {
   }
 });
 
-test('#getProjectNumFromID', { concurrency: true }, async (suite) => {
+test('#projectIDtoNum', { concurrency: true }, async (suite) => {
   const cases = [
     {
       name: 'valid',
@@ -337,14 +333,14 @@ test(
 
       assert.deepStrictEqual(kubeconfig?.['current-context'], contextName);
 
-      assert.deepStrictEqual(cluster?.name, publicCluster?.data?.name);
+      assert.deepStrictEqual(cluster?.name, publicCluster?.name);
       assert.deepStrictEqual(
         cluster?.cluster?.['certificate-authority-data'],
-        publicCluster.data?.masterAuth?.clusterCaCertificate,
+        publicCluster.masterAuth?.clusterCaCertificate,
       );
-      assert.deepStrictEqual(cluster?.cluster?.server, `https://${publicCluster?.data?.endpoint}`);
+      assert.deepStrictEqual(cluster?.cluster?.server, `https://${publicCluster?.endpoint}`);
 
-      assert.deepStrictEqual(user?.name, publicCluster?.data?.name);
+      assert.deepStrictEqual(user?.name, publicCluster?.name);
       assert.ok(user?.user?.token);
     });
 
@@ -371,17 +367,14 @@ test(
 
         assert.deepStrictEqual(kubeconfig?.['current-context'], contextName);
 
-        assert.deepStrictEqual(cluster?.name, publicCluster?.data?.name);
+        assert.deepStrictEqual(cluster?.name, publicCluster?.name);
         assert.deepStrictEqual(
           cluster?.cluster?.['certificate-authority-data'],
-          publicCluster.data?.masterAuth?.clusterCaCertificate,
+          publicCluster.masterAuth?.clusterCaCertificate,
         );
-        assert.deepStrictEqual(
-          cluster?.cluster?.server,
-          `https://${publicCluster?.data?.endpoint}`,
-        );
+        assert.deepStrictEqual(cluster?.cluster?.server, `https://${publicCluster?.endpoint}`);
 
-        assert.deepStrictEqual(user?.name, publicCluster?.data?.name);
+        assert.deepStrictEqual(user?.name, publicCluster?.name);
         assert.deepStrictEqual(user?.user?.['auth-provider']?.name, 'gcp');
       },
     );
@@ -407,17 +400,17 @@ test(
 
       assert.deepStrictEqual(kubeconfig?.['current-context'], contextName);
 
-      assert.deepStrictEqual(cluster?.name, privateCluster?.data?.name);
+      assert.deepStrictEqual(cluster?.name, privateCluster?.name);
       assert.deepStrictEqual(
         cluster?.cluster?.['certificate-authority-data'],
-        privateCluster.data?.masterAuth?.clusterCaCertificate,
+        privateCluster.masterAuth?.clusterCaCertificate,
       );
       assert.deepStrictEqual(
         cluster?.cluster?.server,
-        `https://${privateCluster?.data?.privateClusterConfig?.privateEndpoint}`,
+        `https://${privateCluster?.privateClusterConfig?.privateEndpoint}`,
       );
 
-      assert.deepStrictEqual(user?.name, privateCluster?.data?.name);
+      assert.deepStrictEqual(user?.name, privateCluster?.name);
     });
 
     await suite.test('can generate kubeconfig with connect gateway', async () => {
@@ -441,7 +434,7 @@ test(
 
       assert.deepStrictEqual(kubeconfig?.['current-context'], contextName);
 
-      assert.deepStrictEqual(cluster?.name, privateCluster.data.name);
+      assert.deepStrictEqual(cluster?.name, privateCluster.name);
       assert.deepStrictEqual(cluster?.cluster.server, 'https://foo');
     });
 
@@ -465,7 +458,7 @@ test(
 
       assert.deepStrictEqual(kubeconfig?.['current-context'], contextName);
 
-      assert.deepStrictEqual(cluster?.name, privateCluster.data.name);
+      assert.deepStrictEqual(cluster?.name, privateCluster.name);
       assert.deepStrictEqual(cluster?.cluster.server, 'https://gke-123456789.us-central1.gke.goog');
     });
 
