@@ -25,24 +25,24 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@actions/core": "^1.11.1",
-    "@google-github-actions/actions-utils": "^0.8.3",
-    "google-auth-library": "^9.15.0",
-    "yaml": "^2.6.1"
+    "@google-github-actions/actions-utils": "^0.8.6",
+    "google-auth-library": "^9.15.1",
+    "yaml": "^2.7.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
-    "@eslint/js": "^9.17.0",
-    "@kubernetes/client-node": "^0.22.3",
-    "@types/node": "^22.10.2",
-    "@typescript-eslint/eslint-plugin": "^8.18.0",
-    "@typescript-eslint/parser": "^8.18.0",
+    "@eslint/js": "^9.19.0",
+    "@kubernetes/client-node": "^1.0.0",
+    "@types/node": "^22.13.0",
+    "@typescript-eslint/eslint-plugin": "^8.22.0",
+    "@typescript-eslint/parser": "^8.22.0",
     "@vercel/ncc": "^0.38.3",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-prettier": "^5.2.1",
-    "eslint": "^9.17.0",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-prettier": "^5.2.3",
+    "eslint": "^9.19.0",
     "prettier": "^3.4.2",
     "ts-node": "^10.9.2",
-    "typescript-eslint": "^8.18.0",
-    "typescript": "^5.7.2"
+    "typescript-eslint": "^8.22.0",
+    "typescript": "^5.7.3"
   }
 }
