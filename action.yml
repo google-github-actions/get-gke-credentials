@@ -15,8 +15,8 @@
 name: 'Get GKE Credentials'
 author: 'Google LLC'
 description: |-
-  Authenticate to a Google Kubernetes Engine (GKE) cluster by generating an
-  emphemeral kubeconfig to use with kubectl, helm, etc.
+  Generate ephemeral credentials for authenticating to Google Kubernetes Engine
+  (GKE) and kubectl, helm, etc.
 
 inputs:
   cluster_name:
@@ -79,7 +79,7 @@ inputs:
       to connect to cluster.
     default: 'false'
     required: false
-  
+
   use_dns_based_endpoint:
     description: |-
       Set this true to use [DNS-based endpoint](https://cloud.google.com/kubernetes-engine/docs/concepts/network-isolation#dns-based_endpoint)
