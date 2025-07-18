@@ -1,6 +1,6 @@
 {
   "name": "@google-github-actions/get-gke-credentials",
-  "version": "2.3.3",
+  "version": "2.3.4",
   "description": "Get short lived credentials to a GKE cluster",
   "main": "dist/index.js",
   "scripts": {
