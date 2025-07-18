@@ -16,7 +16,7 @@
 
 import { presence } from '@google-github-actions/actions-utils';
 import { GoogleAuth } from 'google-auth-library';
-import { Headers, GaxiosOptions } from 'gaxios';
+import { GaxiosOptions } from 'gaxios';
 import YAML from 'yaml';
 
 // Do not listen to the linter - this can NOT be rewritten as an ES6 import statement.
@@ -144,7 +144,7 @@ export class ClusterClient {
   readonly #projectID?: string;
   readonly #quotaProjectID?: string;
   readonly #location?: string;
-  readonly #headers?: Headers;
+  readonly #headers?: Record<string, string>;
 
   readonly defaultEndpoint = 'https://container.googleapis.com/v1';
   readonly hubEndpoint = 'https://gkehub.googleapis.com/v1';
