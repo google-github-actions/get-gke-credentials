@@ -62,7 +62,7 @@ jobs:
 
 <!-- BEGIN_AUTOGEN_INPUTS -->
 
--   <a name="cluster_name"></a><a href="#user-content-cluster_name"><code>cluster_name</code></a>: _(Required)_ Name of the cluster for which to get credentials. This can be specified as
+-   <a name="__input_cluster_name"></a><a href="#user-content-__input_cluster_name"><code>cluster_name</code></a>: _(Required)_ Name of the cluster for which to get credentials. This can be specified as
     a full resource name:
 
         projects/<project>/locations/<location>/clusters/<cluster>
@@ -74,32 +74,32 @@ jobs:
 
     then both the `project_id` and `location` may be required.
 
--   <a name="location"></a><a href="#user-content-location"><code>location</code></a>: _(Optional)_ Location (region or zone) in which the cluster resides. This value is
+-   <a name="__input_location"></a><a href="#user-content-__input_location"><code>location</code></a>: _(Optional)_ Location (region or zone) in which the cluster resides. This value is
     required unless `cluster_name` is a full resource name.
 
--   <a name="project_id"></a><a href="#user-content-project_id"><code>project_id</code></a>: _(Optional)_ Project ID where the cluster is deployed. If provided, this will override
+-   <a name="__input_project_id"></a><a href="#user-content-__input_project_id"><code>project_id</code></a>: _(Optional)_ Project ID where the cluster is deployed. If provided, this will override
     the project configured by previous steps or environment variables. If not
     provided, the project will be inferred from the environment, best-effort.
 
--   <a name="context_name"></a><a href="#user-content-context_name"><code>context_name</code></a>: _(Optional)_ Name to use when creating the `kubectl` context. If not specified, the
+-   <a name="__input_context_name"></a><a href="#user-content-__input_context_name"><code>context_name</code></a>: _(Optional)_ Name to use when creating the `kubectl` context. If not specified, the
     default value is `gke_<project>_<location>_<cluster>`.
 
--   <a name="namespace"></a><a href="#user-content-namespace"><code>namespace</code></a>: _(Optional)_ Name of the Kubernetes namespace to use within the context.
+-   <a name="__input_namespace"></a><a href="#user-content-__input_namespace"><code>namespace</code></a>: _(Optional)_ Name of the Kubernetes namespace to use within the context.
 
--   <a name="use_auth_provider"></a><a href="#user-content-use_auth_provider"><code>use_auth_provider</code></a>: _(Optional, default: `false`)_ Set this to true to use the Google Cloud auth plugin in `kubectl` instead
+-   <a name="__input_use_auth_provider"></a><a href="#user-content-__input_use_auth_provider"><code>use_auth_provider</code></a>: _(Optional, default: `false`)_ Set this to true to use the Google Cloud auth plugin in `kubectl` instead
     of inserting a short-lived access token.
 
--   <a name="use_internal_ip"></a><a href="#user-content-use_internal_ip"><code>use_internal_ip</code></a>: _(Optional, default: `false`)_ Set this to true to use the internal IP address for the cluster endpoint.
+-   <a name="__input_use_internal_ip"></a><a href="#user-content-__input_use_internal_ip"><code>use_internal_ip</code></a>: _(Optional, default: `false`)_ Set this to true to use the internal IP address for the cluster endpoint.
     This is mostly used with private GKE clusters.
 
--   <a name="use_connect_gateway"></a><a href="#user-content-use_connect_gateway"><code>use_connect_gateway</code></a>: _(Optional, default: `false`)_ Set this to true to use the [Connect Gateway
+-   <a name="__input_use_connect_gateway"></a><a href="#user-content-__input_use_connect_gateway"><code>use_connect_gateway</code></a>: _(Optional, default: `false`)_ Set this to true to use the [Connect Gateway
     endpoint](https://cloud.google.com/anthos/multicluster-management/gateway)
     to connect to cluster.
 
--   <a name="use_dns_based_endpoint"></a><a href="#user-content-use_dns_based_endpoint"><code>use_dns_based_endpoint</code></a>: _(Optional, default: `false`)_ Set this true to use [DNS-based endpoint](https://cloud.google.com/kubernetes-engine/docs/concepts/network-isolation#dns-based_endpoint)
+-   <a name="__input_use_dns_based_endpoint"></a><a href="#user-content-__input_use_dns_based_endpoint"><code>use_dns_based_endpoint</code></a>: _(Optional, default: `false`)_ Set this true to use [DNS-based endpoint](https://cloud.google.com/kubernetes-engine/docs/concepts/network-isolation#dns-based_endpoint)
     to connect to the cluster.
 
--   <a name="fleet_membership_name"></a><a href="#user-content-fleet_membership_name"><code>fleet_membership_name</code></a>: _(Optional)_ Fleet membership name to use for generating Connect Gateway endpoint, of
+-   <a name="__input_fleet_membership_name"></a><a href="#user-content-__input_fleet_membership_name"><code>fleet_membership_name</code></a>: _(Optional)_ Fleet membership name to use for generating Connect Gateway endpoint, of
     the form:
 
         projects/<project>/locations/<location>/memberships/<membership>
@@ -107,7 +107,7 @@ jobs:
     This only applies if `use_connect_gateway` is true. Defaults to auto
     discovery if empty.
 
--   <a name="quota_project_id"></a><a href="#user-content-quota_project_id"><code>quota_project_id</code></a>: _(Optional)_ Project ID from which to pull quota. The caller must have
+-   <a name="__input_quota_project_id"></a><a href="#user-content-__input_quota_project_id"><code>quota_project_id</code></a>: _(Optional)_ Project ID from which to pull quota. The caller must have
     `serviceusage.services.use` permission on the project. If unspecified,
     this defaults to the project of the authenticated principle. This is an
     advanced setting, most users should leave this blank.
@@ -122,7 +122,7 @@ Action produces the following outputs:
 
 <!-- BEGIN_AUTOGEN_OUTPUTS -->
 
--   `kubeconfig_path`: Path on the local filesystem where the generated Kubernetes configuration
+-   <a name="__output_kubeconfig_path"></a><a href="#user-content-__output_kubeconfig_path"><code>kubeconfig_path</code></a>: Path on the local filesystem where the generated Kubernetes configuration
     file resides.
 
 
