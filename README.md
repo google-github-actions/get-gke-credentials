@@ -17,7 +17,7 @@ This action requires:
     Authorization section below for more information. You also need to
     [create a GKE cluster](https://cloud.google.com/kubernetes-engine/docs/quickstart).
 
--   This action runs using Node 20. If you are using self-hosted GitHub Actions
+-   This action runs using Node 24. If you are using self-hosted GitHub Actions
     runners, you must use a [runner
     version](https://github.com/actions/virtual-environments) that supports this
     version or newer.
@@ -42,13 +42,13 @@ jobs:
 
     steps:
     - id: 'auth'
-      uses: 'google-github-actions/auth@v2'
+      uses: 'google-github-actions/auth@v3'
       with:
         project_id: 'my-project'
         workload_identity_provider: 'projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
 
     - id: 'get-credentials'
-      uses: 'google-github-actions/get-gke-credentials@v2'
+      uses: 'google-github-actions/get-gke-credentials@v3'
       with:
         cluster_name: 'my-cluster'
         location: 'us-central1-a'
@@ -159,13 +159,13 @@ jobs:
 
     steps:
     - id: 'auth'
-      uses: 'google-github-actions/auth@v2'
+      uses: 'google-github-actions/auth@v3'
       with:
         project_id: 'my-project'
         workload_identity_provider: 'projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
 
     - id: 'get-credentials'
-      uses: 'google-github-actions/get-gke-credentials@v2'
+      uses: 'google-github-actions/get-gke-credentials@v3'
       with:
         cluster_name: 'my-cluster'
         location: 'us-central1-a'
@@ -178,12 +178,12 @@ jobs:
   job_id:
     steps:
     - id: 'auth'
-      uses: 'google-github-actions/auth@v2'
+      uses: 'google-github-actions/auth@v3'
       with:
         credentials_json: '${{ secrets.gcp_credentials }}'
 
     - id: 'get-credentials'
-      uses: 'google-github-actions/get-gke-credentials@v2'
+      uses: 'google-github-actions/get-gke-credentials@v3'
       with:
         cluster_name: 'my-cluster'
         location: 'us-central1-a'
@@ -201,7 +201,7 @@ jobs:
   job_id:
     steps:
     - id: 'get-credentials'
-      uses: 'google-github-actions/get-gke-credentials@v2'
+      uses: 'google-github-actions/get-gke-credentials@v3'
       with:
         cluster_name: 'my-cluster'
         location: 'us-central1-a'
@@ -221,7 +221,7 @@ jobs:
   job_id:
     steps:
     - id: 'get-credentials'
-      uses: 'google-github-actions/get-gke-credentials@v2'
+      uses: 'google-github-actions/get-gke-credentials@v3'
       with:
         cluster_name: 'my-private-cluster'
         location: 'us-central1-a'
