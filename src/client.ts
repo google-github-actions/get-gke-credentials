@@ -396,9 +396,15 @@ export class ClusterClient {
     }
 
     const token = await this.getToken();
-    const auth = opts.useAuthProvider
-      ? { user: { 'auth-provider': { name: 'gcp' } } }
-      : { user: { token: token } };
+    const auth = { user: 
+      opts.useAuthProvider
+        ? { exec: {
+          apiVersion: 'client.authentication.k8s.io/v1beta1',
+          command: 'gke-gcloud-auth-plugin',
+          provideClusterInfo: true,
+        }}
+        : { token: token },
+    };
     const contextName = opts.contextName;
 
     const kubeConfig: KubeConfig = {
