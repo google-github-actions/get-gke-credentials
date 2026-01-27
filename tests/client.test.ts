@@ -375,7 +375,12 @@ test(
         assert.deepStrictEqual(cluster?.cluster?.server, `https://${publicCluster?.endpoint}`);
 
         assert.deepStrictEqual(user?.name, publicCluster?.name);
-        assert.deepStrictEqual(user?.user?.['auth-provider']?.name, 'gcp');
+        assert.deepStrictEqual(
+          user?.user?.exec?.apiVersion,
+          'client.authentication.k8s.io/v1beta1',
+        );
+        assert.deepStrictEqual(user?.user?.exec?.command, 'gke-gcloud-auth-plugin');
+        assert.deepStrictEqual(user?.user?.exec?.provideClusterInfo, true);
       },
     );
 
