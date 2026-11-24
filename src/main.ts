@@ -115,7 +115,10 @@ export async function run(): Promise<void> {
 
     // Get Cluster object
     const clusterData = await client.getCluster(clusterName.id);
-    logDebug(`Found cluster data: ${JSON.stringify(clusterData, null, 2)}`);
+    // Redact masterAuth before debug-logging: it may contain the cluster's
+    // client private key and certificate, which must not appear in build logs.
+    const clusterDataForLog = { ...clusterData, masterAuth: '[REDACTED]' };
+    logDebug(`Found cluster data: ${JSON.stringify(clusterDataForLog, null, 2)}`);
 
     // If using Connect Gateway, get endpoint
     let connectGWEndpoint;

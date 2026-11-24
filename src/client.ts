@@ -372,7 +372,13 @@ export class ClusterClient {
    * @param opts Input options. See CreateKubeConfigOptions.
    */
   async createKubeConfig(opts: CreateKubeConfigOptions): Promise<string> {
-    this.#logger?.debug(`Creating kubeconfig with options: ${JSON.stringify(opts)}`);
+    // Redact masterAuth before debug-logging: it may contain the cluster's
+    // client private key and certificate, which must not appear in build logs.
+    const optsForLog = {
+      ...opts,
+      clusterData: { ...opts.clusterData, masterAuth: '[REDACTED]' },
+    };
+    this.#logger?.debug(`Creating kubeconfig with options: ${JSON.stringify(optsForLog)}`);
 
     const cluster = opts.clusterData;
     let endpoint = cluster.endpoint;
